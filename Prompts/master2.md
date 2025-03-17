@@ -101,33 +101,33 @@ The site should have the following pages:
   "WebsiteName": {
     "assets": {
       "css": {
-        "global.css": {}
+        "global.css": ""
       },
       "js": {
-        "global.js": {},
-        "home.js": {},
-        "about.js": {}
+        "global.js": "",
+        "home.js": "",
+        "about.js": ""
       },
       "images": {},
       "fonts": {}
     },
     "includes": {
-      "header.php": {},
-      "footer.php": {},
+      "header.php": "",
+      "footer.php": "",
       "home_template": {
-        "hero_home.php": {},
-        "features_home.php": {},
-        "testimonial_home.php": {}
+        "hero_home.php": "",
+        "features_home.php": "",
+        "testimonial_home.php": ""
       },
       "about_template": {
-        "hero_about.php": {},
-        "team_about.php": {}
+        "hero_about.php": "",
+        "team_about.php": ""
       }
     },
     "pages": {
-      "index.php": {},
-      "about.php": {},
-      "contact.php": {}
+      "index.php": "",
+      "about.php": "",
+      "contact.php": ""
     }
   }
 }

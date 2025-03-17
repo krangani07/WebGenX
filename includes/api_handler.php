@@ -1,20 +1,60 @@
 <?php
 require_once __DIR__ . '/../config/config.php';
 
+/**
+ * ApiHandler Class
+ * 
+ * Handles API requests to generate website content using AI.
+ * Supports different types of prompts for various generation scenarios.
+ */
 class ApiHandler {
+    /** @var array $formData Form data containing website generation parameters */
     private $formData;
     
-    public function __construct($formData) {
+    /** @var string $promptType Type of prompt to use (master, singlePage, subPrompt) */
+    private $promptType;
+    
+    /**
+     * Constructor for ApiHandler
+     * 
+     * @param array $formData Form data containing website generation parameters
+     * @param string $promptType Type of prompt to use (default: 'master')
+     */
+    public function __construct($formData, $promptType = 'master') {
         $this->formData = $formData;
+        $this->promptType = $promptType;
     }
     
+    /**
+     * Handles the API request process
+     * 
+     * @return array Response data from the API call
+     */
     public function handleRequest() {
-        $promptText = $this->buildPrompt();
+        $promptText = $this->generatePrompt();
         $data = $this->buildRequestData($promptText);
         return $this->makeApiCall($data);
     }
     
-    private function buildPrompt() {
+    /**
+     * Generates the appropriate prompt based on promptType
+     * 
+     * @return string Generated prompt text
+     */
+    private function generatePrompt() {
+        switch ($this->promptType) {
+            case 'master':
+                return $this->masterPrompt();
+            case 'singlePage':
+                return $this->singlePagePrompt();
+            case 'subPrompt':
+                return $this->subPrompt();
+            default:
+                return $this->masterPrompt();
+        }
+    }
+    
+    private function masterPrompt() {
         $promptText = "You are an AI-powered website generator. Your task is to create a fully functional multi-page website by generating structured HTML, PHP, JavaScript, and Tailwind.\n\n";
 
         // Basic website information
@@ -163,10 +203,54 @@ class ApiHandler {
         $promptText .= "}\n";
         $promptText .= "```\n";
 
-        error_log("\n/////////////////////////////////////////////////////////////////////////////////////////////////////\n");
+        // error_log("\n-------------------------------------------------------------------------------------------------------------//\n");
+        // error_log("prompt::==".$promptText);
+        // error_log("\n-------------------------------------------------------------------------------------------------------------//\n");
         return $promptText;
     }
     
+    private function singlePagePrompt() {
+        $promptText = "You are an AI-powered website generator. Your task is to create a single page for a website using HTML, PHP, JavaScript, and Tailwind.\n\n";
+        
+        // Add single page specific instructions
+        $promptText .= "---\n\n";
+        $promptText .= "Page Details\n";
+        $promptText .= "- Page Name: {$this->formData['pageName']}\n";
+        $promptText .= "- Page Purpose: {$this->formData['pagePurpose']}\n";
+        $promptText .= "- Content Sections: {$this->formData['contentSections']}\n\n";
+        
+        // Add more single page specific instructions as needed
+        
+        error_log("\n-------------------------------------------------------------------------------------------------------------//\n");
+        error_log("single page prompt::==".$promptText);
+        error_log("\n-------------------------------------------------------------------------------------------------------------//\n");
+        return $promptText;
+    }
+    
+    private function subPrompt() {
+        $promptText = "You are an AI-powered component generator. Your task is to create a specific component or section for a website using HTML, PHP, JavaScript, and Tailwind.\n\n";
+        
+        // Add sub-prompt specific instructions
+        $promptText .= "---\n\n";
+        $promptText .= "Component Details\n";
+        $promptText .= "- Component Type: {$this->formData['componentType']}\n";
+        $promptText .= "- Component Purpose: {$this->formData['componentPurpose']}\n";
+        $promptText .= "- Design Style: {$this->formData['designStyle']}\n\n";
+        
+        // Add more component specific instructions as needed
+        
+        error_log("\n-------------------------------------------------------------------------------------------------------------//\n");
+        error_log("sub prompt::==".$promptText);
+        error_log("\n-------------------------------------------------------------------------------------------------------------//\n");
+        return $promptText;
+    }
+    
+    /**
+     * Builds the request data structure for the API call
+     * 
+     * @param string $promptText The prompt text to send to the API
+     * @return array Structured data for the API request
+     */
     private function buildRequestData($promptText) {
         return [
             'contents'         => [
@@ -187,6 +271,12 @@ class ApiHandler {
         ];
     }
     
+    /**
+     * Makes the API call to the AI service
+     * 
+     * @param array $data Request data to send to the API
+     * @return array Processed API response
+     */
     private function makeApiCall($data) {
         $url = API_URL . '?key=' . API_KEY;
         $ch  = curl_init($url);
@@ -201,20 +291,110 @@ class ApiHandler {
         $response = json_decode($response, true);
         $responseText = $response['candidates'][0]['content']['parts']['0']['text'];
         
+        // Process response based on prompt type
+        return $this->processResponse($responseText, $httpCode);
+    }
+    
+    /**
+     * Processes the API response based on prompt type
+     * 
+     * @param string $responseText The text response from the API
+     * @param int $httpCode HTTP status code from the API call
+     * @return array Processed response data
+     */
+    private function processResponse($responseText, $httpCode) {
+        switch ($this->promptType) {
+            case 'master':
+                return $this->processMasterResponse($responseText, $httpCode);
+            case 'singlePage':
+                return $this->processSinglePageResponse($responseText, $httpCode);
+            case 'subPrompt':
+                return $this->processSubPromptResponse($responseText, $httpCode);
+            default:
+                return $this->processMasterResponse($responseText, $httpCode);
+        }
+    }
+    
+    /**
+     * Processes the response for master prompt type
+     * Creates website structure from JSON response
+     * 
+     * @param string $responseText The text response from the API
+     * @param int $httpCode HTTP status code from the API call
+     * @return array Processed response data
+     */
+    private function processMasterResponse($responseText, $httpCode) {
         // Use the structure generator to create files and folders
         require_once __DIR__ . '/structure_generator.php';
         $generator = new StructureGenerator(USER_WEBSITES);
-        $generator->createFromJson($responseText);
+        // $generator->createFromJson($responseText);
+
+        //clean resonce to json before further process
+        $responseText = $generator->cleanJson($responseText);
+
+        // Extract sections for the home page using JsonExtractor
+        require_once __DIR__ . '/json_extractor.php';
+        $extractor = new JsonExtractor();
+        $pageName = 'home'; // Default to home page
+        $result = $extractor->extractSections($responseText, $pageName);
+        
+        // Log the extracted sections and filtered JSON
+        error_log("\n-------------------------------------------------------------------------------------------------------------//\n");
+        error_log("Extracted sections for page '{$pageName}':");
+        error_log(print_r($result['sections'], true));
+        error_log("\nFiltered JSON structure:");
+        error_log(json_encode($result['filteredJson'], JSON_PRETTY_PRINT));
+        error_log("\n-------------------------------------------------------------------------------------------------------------//\n");
         
         return [
             'code' => $httpCode,
             'data' => $generator->cleanJson($responseText)
         ];
     }
+    
+    /**
+     * Processes the response for single page prompt type
+     * 
+     * @param string $responseText The text response from the API
+     * @param int $httpCode HTTP status code from the API call
+     * @return array Processed response data
+     */
+    private function processSinglePageResponse($responseText, $httpCode) {
+        // Process single page response
+        // You can create a specific handler for single page responses
+        return [
+            'code' => $httpCode,
+            'data' => $responseText,
+            'type' => 'singlePage'
+        ];
+    }
+    
+    /**
+     * Processes the response for sub-prompt type
+     * 
+     * @param string $responseText The text response from the API
+     * @param int $httpCode HTTP status code from the API call
+     * @return array Processed response data
+     */
+    private function processSubPromptResponse($responseText, $httpCode) {
+        // Process sub-prompt response
+        // You can create a specific handler for sub-prompt responses
+        return [
+            'code' => $httpCode,
+            'data' => $responseText,
+            'type' => 'subPrompt'
+        ];
+    }
 }
 
-// Wrapper function to maintain backward compatibility
-function handleApiRequest($formData) {
-    $handler = new ApiHandler($formData);
+/**
+ * Wrapper function to maintain backward compatibility
+ * 
+ * @param array $formData Form data containing website generation parameters
+ * @param string $promptType Type of prompt to use (default: 'master')
+ * @return array Response data from the API call
+ */
+function handleApiRequest($formData, $promptType = 'master') {
+    $handler = new ApiHandler($formData, $promptType);
     return $handler->handleRequest();
 }
