@@ -1,0 +1,10 @@
+/* /Flickfeed2/assets/css/global.css */
+/* Global Styles */
+
+/* Add any global CSS customizations here */
+.bg-dark {
+    background-color: #1e293b; /* dark-gray-800 in tailwind config */
+}
+.text-dark {
+    color: #1e293b; /* dark-gray-800 in tailwind config */
+}

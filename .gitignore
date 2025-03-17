@@ -1,0 +1,18 @@
+# But not these files/folders
+!.gitignore
+
+# Explicitly ignore these folders
+**/tests/
+**/tests/**
+**/logs/
+**/logs/**
+**/webs/
+**/webs/**
+
+# Common files to ignore
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+*.bak
+*.swp

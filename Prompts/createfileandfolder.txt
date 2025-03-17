@@ -1,0 +1,61 @@
+$basePath = "C:\xampp\htdocs\qp\curl\tests\Flickfeed2"
+
+# List of files to create
+$files = @(
+    "\assets\css\global.css",
+    "\assets\js\about.js",
+    "\assets\js\blog.js",
+    "\assets\js\contact.js",
+    "\assets\js\gallery.js",
+    "\assets\js\global.js",
+    "\assets\js\index.js",
+    "\assets\js\services.js",
+    "\includes\about_template\about_us_section_about.php",
+    "\includes\about_template\cta_about.php",
+    "\includes\about_template\hero_about.php",
+    "\includes\about_template\skills_section_about.php",
+    "\includes\about_template\team_section_about.php",
+    "\includes\blog_template\blog_posts_blog.php",
+    "\includes\blog_template\cta_blog.php",
+    "\includes\blog_template\hero_blog.php",
+    "\includes\contact_template\contact_form_contact.php",
+    "\includes\contact_template\contact_info_contact.php",
+    "\includes\contact_template\hero_contact.php",
+    "\includes\footer.php",
+    "\includes\gallery_template\cta_gallery.php",
+    "\includes\gallery_template\hero_gallery.php",
+    "\includes\gallery_template\image_gallery_gallery.php",
+    "\includes\header.php",
+    "\includes\home_template\cta_home.php",
+    "\includes\home_template\features_home.php",
+    "\includes\home_template\hero_home.php",
+    "\includes\home_template\portfolio_home.php",
+    "\includes\home_template\testimonial_home.php",
+    "\includes\services_template\cta_services.php",
+    "\includes\services_template\hero_services.php",
+    "\includes\services_template\pricing_services.php",
+    "\includes\services_template\services_offered_services.php",
+    "\includes\services_template\testimonial_services.php",
+    "\pages\about.php",
+    "\pages\blog.php",
+    "\pages\contact.php",
+    "\pages\gallery.php",
+    "\pages\index.php",
+    "\pages\services.php"
+)
+
+# Create each file and ensure its directory exists
+foreach ($file in $files) {
+    $filePath = $basePath + $file
+    $directory = [System.IO.Path]::GetDirectoryName($filePath)
+
+    # Create directory if it doesn't exist
+    if (!(Test-Path $directory)) {
+        New-Item -ItemType Directory -Path $directory -Force
+    }
+
+    # Create an empty file
+    New-Item -ItemType File -Path $filePath -Force
+}
+
+Write-Output "All files and directories created successfully!"
