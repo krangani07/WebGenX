@@ -21,9 +21,8 @@ if (isset($_POST['submit'])) {
     $response = handleApiRequest($formData);
     if (isset($response['code'])) {
         if ($response['code'] == 200) {
-            $response = $response['data'];
-            error_log('RESPONSE'. print_r($response,true));
-            // error_log('RESPONSE' . $response['data']);
+            // error_log('RESPONSE'. print_r($response['data'],true));
+            error_log('RESPONSE'. print_r($response['sections'],true));
         } else {
             error_log('Error: HTTP Status Code ' . print_r($response['code'],true) . "\n" . print_r($response['data'], true));
         }
