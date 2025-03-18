@@ -5,7 +5,7 @@
  * Extracts section names and locations from a JSON structure based on a given page name
  */
 class JsonExtractor {
-    /**
+   /**
      * Extract sections and create a filtered JSON structure for a specific page or all pages
      * 
      * @param string $jsonString The JSON string containing the website structure
@@ -57,8 +57,13 @@ class JsonExtractor {
                 $pageFilteredJson = [
                     $websiteKey => [
                         'assets' => [
-                            'css' => [],
-                            'js' => [],
+                            'css' => [
+                                'global.css' => ''
+                            ],
+                            'js' => [
+                                "{$page}.js" => '',
+                                'global.js' => ''
+                            ],
                             'images' => [],
                             'fonts' => []
                         ],
@@ -83,31 +88,11 @@ class JsonExtractor {
                 $pageFile = $page === 'home' ? 'index.php' : "{$page}.php";
                 $pageFilteredJson[$websiteKey]['pages'][$pageFile] = '';
                 
-                // Check if there's a JS file for this page
-                if (isset($jsonData[$websiteKey]['assets']['js']["{$page}.js"])) {
-                    $pageFilteredJson[$websiteKey]['assets']['js']["{$page}.js"] = '';
-                }
-                
-                // Check if there's a global JS file
-                if (isset($jsonData[$websiteKey]['assets']['js']["global.js"])) {
-                    $pageFilteredJson[$websiteKey]['assets']['js']["global.js"] = '';
-                }
-                
-                // Check if there's a CSS file for this page
-                if (isset($jsonData[$websiteKey]['assets']['css']["{$page}.css"])) {
-                    $pageFilteredJson[$websiteKey]['assets']['css']["{$page}.css"] = '';
-                }
-                
-                // Check if there's a global CSS file
-                if (isset($jsonData[$websiteKey]['assets']['css']["global.css"])) {
-                    $pageFilteredJson[$websiteKey]['assets']['css']["global.css"] = '';
-                }
-                
                 // Add this page to the formatted response
-                $formattedResponse[$page] = array(
+                $formattedResponse[$page] = [
                     'sections' => $sections,
                     'pagefolderstructure' => json_encode($pageFilteredJson)
-                );
+                ];
             }
             
             return $formattedResponse;
@@ -120,8 +105,13 @@ class JsonExtractor {
             $filteredJson = [
                 $websiteKey => [
                     'assets' => [
-                        'css' => [],
-                        'js' => [],
+                        'css' => [
+                            'global.css' => ''
+                        ],
+                        'js' => [
+                            "{$pageName}.js" => '',
+                            'global.js' => ''
+                        ],
                         'images' => [],
                         'fonts' => []
                     ],
@@ -151,31 +141,11 @@ class JsonExtractor {
             $pageFile = $pageName === 'home' ? 'index.php' : "{$pageName}.php";
             $filteredJson[$websiteKey]['pages'][$pageFile] = '';
             
-            // Check if there's a JS file for this page
-            if (isset($jsonData[$websiteKey]['assets']['js']["{$pageName}.js"])) {
-                $filteredJson[$websiteKey]['assets']['js']["{$pageName}.js"] = '';
-            }
-            
-            // Check if there's a global JS file
-            if (isset($jsonData[$websiteKey]['assets']['js']["global.js"])) {
-                $filteredJson[$websiteKey]['assets']['js']["global.js"] = '';
-            }
-            
-            // Check if there's a CSS file for this page
-            if (isset($jsonData[$websiteKey]['assets']['css']["{$pageName}.css"])) {
-                $filteredJson[$websiteKey]['assets']['css']["{$pageName}.css"] = '';
-            }
-            
-            // Check if there's a global CSS file
-            if (isset($jsonData[$websiteKey]['assets']['css']["global.css"])) {
-                $filteredJson[$websiteKey]['assets']['css']["global.css"] = '';
-            }
-            
             // Create the formatted response for a single page
             $formattedResponse = [
                 $pageName => [
                     'sections' => $sections,
-                    'pagefolderstructure' => json_encode($filteredJson, JSON_PRETTY_PRINT)
+                    'pagefolderstructure' => json_encode($filteredJson)
                 ]
             ];
             
