@@ -335,20 +335,21 @@ class ApiHandler {
         // Extract sections for the home page using JsonExtractor
         require_once __DIR__ . '/json_extractor.php';
         $extractor = new JsonExtractor();
-        $pageName = 'home'; // Default to home page
-        $result = $extractor->extractSections($responseText, $pageName);
         
-        // Log the extracted sections and filtered JSON
-        error_log("\n-------------------------------------------------------------------------------------------------------------//\n");
-        error_log("Extracted sections for page '{$pageName}':");
-        error_log(print_r($result['sections'], true));
-        error_log("\nFiltered JSON structure:");
-        error_log(json_encode($result['filteredJson'], JSON_PRETTY_PRINT));
-        error_log("\n-------------------------------------------------------------------------------------------------------------//\n");
+        // Extract all sections using the updated extractSections method
+        $formattedSections = $extractor->extractSections($responseText);
+        
+        // Log the extracted sections
+        // error_log("\n-------------------------------------------------------------------------------------------------------------//\n");
+        // error_log("All Pages and Sections:");
+        // error_log("".print_r($formattedSections['home']['sections'],true));
+        // error_log("".print_r($formattedSections['home']['pagefolderstructure'],true));
+        // error_log("\n-------------------------------------------------------------------------------------------------------------//\n");
         
         return [
             'code' => $httpCode,
-            'data' => $generator->cleanJson($responseText)
+            'data' => $generator->cleanJson($responseText),
+            'sections' => $formattedSections
         ];
     }
     
