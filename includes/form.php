@@ -1,4 +1,4 @@
-    <div class="container mx-auto px-4 py-8">
+<div class="container mx-auto px-4 py-8">
         <div class="text-center mb-12">
             <h1 class="text-4xl font-bold text-gray-800 mb-4">Generate</h1>
             <p class="text-xl text-gray-600">Create beautiful websites using multiple AI providers</p>
@@ -13,7 +13,7 @@
                     <label for="websiteName" class="block text-gray-700 font-medium mb-2">Color Scheme</label>
                     <input type="text" id="websiteName" name="websiteName" 
                         class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Website Name">
+                        placeholder="Website Name" value="kaushal">
                     <span id="websiteNameError" class="text-red-500 text-sm hidden">Please enter Name for Website.</span>
                 </div>
 
@@ -23,7 +23,7 @@
                         class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <option value="">Select Website Type</option>
                         <option value="business">Business</option>
-                        <option value="portfolio">Portfolio</option>
+                        <option value="portfolio" selected>Portfolio</option>
                         <option value="blog">Blog</option>
                         <option value="ecommerce">E-Commerce</option>
                         <option value="personal">Personal</option>
@@ -35,7 +35,7 @@
                     <label for="description" class="block text-gray-700 font-medium mb-2">Website Description</label>
                     <textarea id="description" name="description" rows="4" 
                         class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Describe your website in detail...">A sleek and professional personal portfolio website showcasing my skills, projects, and experience in [your expertise, e.g., web development, AI integration, design]. The site features an engaging homepage, an about section, a portfolio of my best work, testimonials, and a contact page for collaboration opportunities. Designed for a clean, modern, and user-friendly experience</textarea>
+                        placeholder="Describe your website in detail...">A sleek and professional personal portfolio website showcasing my skills, projects, and experience in web development, AI integration, design. The site features an engaging homepage, an about section, a portfolio of my best work, testimonials, and a contact page for collaboration opportunities. Designed for a clean, modern, and user-friendly experience</textarea>
                     <span id="descriptionError" class="text-red-500 text-sm hidden">Please enter a description.</span>
                 </div>
 
@@ -43,7 +43,7 @@
                     <label for="colorScheme" class="block text-gray-700 font-medium mb-2">Color Scheme</label>
                     <input type="text" id="colorScheme" name="colorScheme" 
                         class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="e.g., Blue and white, Earth tones, etc.">
+                        placeholder="e.g., Blue and white, Earth tones, etc." value="blue,black,purple">
                     <span id="colorSchemeError" class="text-red-500 text-sm hidden">Please enter a color scheme.</span>
                 </div>
 
@@ -52,7 +52,7 @@
                     <select id="typography" name="typography" 
                         class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <option value="">Select Typography</option>
-                        <option value="inter">Inter</option>
+                        <option value="inter" selected>Inter</option>
                         <option value="roboto">Roboto</option>
                         <option value="opensans">Open Sans</option>
                         <option value="montserrat">Montserrat</option>
@@ -70,11 +70,11 @@
                             <label for="pageHome">Home</label>
                         </div>
                         <div class="flex items-center">
-                            <input type="checkbox" id="pageAbout" name="pages[]" value="About" class="mr-2">
+                            <input type="checkbox" id="pageAbout" name="pages[]" value="About" class="mr-2" checked>
                             <label for="pageAbout">About</label>
                         </div>
                         <div class="flex items-center">
-                            <input type="checkbox" id="pageServices" name="pages[]" value="Services" class="mr-2">
+                            <input type="checkbox" id="pageServices" name="pages[]" value="Services" class="mr-2" checked>
                             <label for="pageServices">Services</label>
                         </div>
                         <div class="flex items-center">
@@ -99,7 +99,7 @@
                         <div class="flex mb-2">
                             <input type="text" name="customPages[]"
                                 class="flex-grow px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="Enter custom page name">
+                                placeholder="Enter custom page name" value="works">
                             <button type="button"
                                 class="ml-2 bg-red-500 text-white px-3 py-2 rounded-lg hover:bg-red-600 remove-page hidden">Remove</button>
                         </div>

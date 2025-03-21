@@ -6,10 +6,10 @@
         <div class="container mx-auto px-4 py-6">
             <div class="flex flex-col md:flex-row justify-between items-center">
                 <div class="mb-4 md:mb-0">
-                    <p class="text-gray-600">&copy; 2023 WebGenX. All rights reserved.</p>
+                    <p class="text-gray-600">&copy; 2025 WebGenX. All rights reserved.</p>
                 </div>
                 <div class="flex space-x-4">
-                    <a href="https://github.com" class="text-gray-600 hover:text-blue-600 transition duration-300">
+                    <a href="https://github.com/krangani07" class="text-gray-600 hover:text-blue-600 transition duration-300">
                         <i class="fab fa-github"></i>
                     </a>
                     <a href="https://twitter.com" class="text-gray-600 hover:text-blue-600 transition duration-300">
