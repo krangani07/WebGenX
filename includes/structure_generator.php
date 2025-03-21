@@ -97,4 +97,123 @@ class StructureGenerator {
             }
         }
     }
+    
+    /**
+     * Extract code blocks from a string
+     * 
+     * @param string $content String containing code blocks
+     * @return array Array of extracted code blocks with language and content
+     */
+    public function extractCodeBlocks($content) {
+        $codeBlocks = [];
+        $languages = ['php', 'css', 'js', 'javascript', 'json', 'html'];
+        
+        // Pattern to match code blocks with language identifier
+        $pattern = '/```(' . implode('|', $languages) . ')\s*(.*?)\s*```/s';
+        
+        if (preg_match_all($pattern, $content, $matches, PREG_SET_ORDER)) {
+            foreach ($matches as $match) {
+                $language = $match[1];
+                $code = trim($match[2]);
+                
+                // Normalize language name
+                if ($language === 'js') {
+                    $language = 'javascript';
+                }
+                
+                // Extract file path using multiple patterns
+                $filePath = null;
+                
+                // First line patterns for different comment styles
+                $firstLine = strtok($code, "\n");
+                
+                if (preg_match('/^\s*<\?php\s*\/\/\s*(.*?)\s*(\?>)?/', $firstLine, $pathMatch)) {
+                    // PHP comment: <?php // includes/header.php /?/>
+                    $filePath = trim($pathMatch[1]);
+                } elseif (preg_match('/^\s*\/\/\s*(.*?)$/', $firstLine, $pathMatch)) {
+                    // JS comment: // assets/js/global.js
+                    $filePath = trim($pathMatch[1]);
+                } elseif (preg_match('/^\s*\/\*\s*(.*?)\s*\*\//', $firstLine, $pathMatch)) {
+                    // CSS comment: /* assets/css/global.css */
+                    $filePath = trim($pathMatch[1]);
+                } elseif (preg_match('/^\s*<!--\s*(.*?)\s*-->/', $firstLine, $pathMatch)) {
+                    // HTML comment: <!-- includes/header.php -->
+                    $filePath = trim($pathMatch[1]);
+                }
+                
+                // If file path found, remove the first line from the code
+                if ($filePath) {
+                    // Remove the first line (file path comment)
+                    $lines = explode("\n", $code);
+                    array_shift($lines);
+                    $code = trim(implode("\n", $lines));
+                }
+                
+                // Debug logging
+                error_log("Extracted code block: Language=$language, FilePath=" . ($filePath ? $filePath : "NONE"));
+                
+                $codeBlocks[] = [
+                    'language' => $language,
+                    'content' => $code,
+                    'file_path' => $filePath
+                ];
+            }
+        }
+        
+        return $codeBlocks;
+    }
+    
+    /**
+     * Save extracted code blocks to files
+     * 
+     * @param array $codeBlocks Array of code blocks
+     * @param string $websiteName Name of the website (for path prefixing)
+     * @return array Results of the save operation
+     */
+    public function saveCodeBlocks($codeBlocks, $websiteName = '') {
+        $results = [];
+        
+        foreach ($codeBlocks as $block) {
+            if (empty($block['file_path'])) {
+                $results[] = "⚠️ Skipped code block with no file path";
+                continue;
+            }
+            
+            $filePath = $block['file_path'];
+            
+            // Prepend website name if provided and not already included
+            if (!empty($websiteName) && strpos($filePath, $websiteName) === false) {
+                $firstDir = explode('/', $filePath)[0];
+                if (in_array($firstDir, ['assets', 'includes', 'pages'])) {
+                    $filePath = $websiteName . '/' . $filePath;
+                }
+            }
+            
+            // Prepend base path
+            $fullPath = $this->basePath . '/' . $filePath;
+            
+            try {
+                // Create directory if it doesn't exist
+                $dirPath = dirname($fullPath);
+                if (!is_dir($dirPath)) {
+                    mkdir($dirPath, 0777, true);
+                    $results[] = "📁 Created directory: $dirPath";
+                }
+                
+                // Add PHP opening tag for PHP files if not present
+                $content = $block['content'];
+                if (pathinfo($filePath, PATHINFO_EXTENSION) === 'php' && strpos($content, '<?php') === false) {
+                    $content = "<?php\n" . $content;
+                }
+                
+                // Save the code to the file
+                file_put_contents($fullPath, $content);
+                $results[] = "✅ Saved: $filePath";
+            } catch (Exception $e) {
+                $results[] = "❌ Error saving $filePath: " . $e->getMessage();
+            }
+        }
+        
+        return $results;
+    }
 }
