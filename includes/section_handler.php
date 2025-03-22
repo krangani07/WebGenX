@@ -1,27 +1,43 @@
 <?php
+// Start output buffering to catch any unwanted output
+ob_start();
 session_start();
 
 // Check if the request is a POST request
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $action = isset($_POST['action']) ? $_POST['action'] : '';
+    // Set header to JSON
+    header('Content-Type: application/json');
     
-    switch ($action) {
-        case 'add':
-            addSection();
-            break;
-        case 'delete':
-            deleteSection();
-            break;
-        case 'check_duplicate':
-            checkDuplicate();
-            break;
-        default:
-            echo json_encode(['success' => false, 'message' => 'Invalid action']);
-            break;
+    try {
+        $action = isset($_POST['action']) ? $_POST['action'] : '';
+        
+        switch ($action) {
+            case 'add':
+                addSection();
+                break;
+            case 'delete':
+                deleteSection();
+                break;
+            case 'check_duplicate':
+                checkDuplicate();
+                break;
+            default:
+                echo json_encode(['success' => false, 'message' => 'Invalid action']);
+                break;
+        }
+    } catch (Exception $e) {
+        // Clear any output that might have been generated
+        ob_clean();
+        // Return error as JSON
+        echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
     }
 } else {
+    // Set header to JSON
+    header('Content-Type: application/json');
     echo json_encode(['success' => false, 'message' => 'Invalid request method']);
 }
+// End and flush the output buffer
+ob_end_flush();
 
 /**
  * Check if a section with the given name already exists
@@ -73,83 +89,120 @@ function checkDuplicate() {
  * Add a new section to a page
  */
 function addSection() {
-    // Get the required parameters
-    $page_name = isset($_POST['page_name']) ? $_POST['page_name'] : '';
-    $section_name = isset($_POST['section_name']) ? $_POST['section_name'] : '';
-    $section_type = isset($_POST['section_type']) ? $_POST['section_type'] : 'custom';
-    
-    // Validate input
-    if (empty($page_name) || empty($section_name)) {
-        echo json_encode(['success' => false, 'message' => 'Missing required parameters']);
-        return;
-    }
-    
-    // Sanitize section name (remove spaces, special chars)
-    $section_name = preg_replace('/[^a-zA-Z_]/', '', $section_name);
-    
-    // Determine the suffix based on the page
-    $suffix = ($page_name === 'home') ? '_index' : '_' . $page_name;
-    
-    // Create the new file name with the proper suffix and .php extension
-    $new_file_name = $section_name . $suffix . '.php';
-    
-    // Check for duplicates (case-insensitive)
-    $duplicate = false;
-    if (isset($_SESSION['page_files'][$page_name]['section_files'])) {
-        foreach ($_SESSION['page_files'][$page_name]['section_files'] as $section) {
-            // Compare the base section name (without suffix) case-insensitively
-            $existing_name = $section['name'];
-            $existing_base_name = preg_replace('/' . preg_quote($suffix, '/') . '\.php$/i', '', $existing_name);
-            
-            if (strtolower($existing_base_name) === strtolower($section_name)) {
-                $duplicate = true;
-                break;
+    try {
+        // Get the required parameters
+        $page_name = isset($_POST['page_name']) ? $_POST['page_name'] : '';
+        $section_name = isset($_POST['section_name']) ? $_POST['section_name'] : '';
+        $section_type = isset($_POST['section_type']) ? $_POST['section_type'] : 'custom';
+        
+        // Validate input
+        if (empty($page_name) || empty($section_name)) {
+            echo json_encode(['success' => false, 'message' => 'Missing required parameters']);
+            return;
+        }
+        
+        // Sanitize section name (remove spaces, special chars)
+        $section_name = preg_replace('/[^a-zA-Z_]/', '', $section_name);
+        
+        // Determine the suffix based on the page
+        $suffix = ($page_name === 'home') ? '_index' : '_' . $page_name;
+        
+        // Create the new file name with the proper suffix and .php extension
+        $new_file_name = $section_name . $suffix . '.php';
+        
+        // Check for duplicates (case-insensitive)
+        $duplicate = false;
+        if (isset($_SESSION['page_files'][$page_name]['section_files'])) {
+            foreach ($_SESSION['page_files'][$page_name]['section_files'] as $section) {
+                // Compare the base section name (without suffix) case-insensitively
+                $existing_name = $section['name'];
+                $existing_base_name = preg_replace('/' . preg_quote($suffix, '/') . '\.php$/i', '', $existing_name);
+                
+                if (strtolower($existing_base_name) === strtolower($section_name)) {
+                    $duplicate = true;
+                    break;
+                }
             }
         }
+        
+        // If duplicate found, return error
+        if ($duplicate) {
+            echo json_encode(['success' => false, 'message' => 'A section with this name already exists']);
+            return;
+        }
+        
+        // Create the template directory name based on the page
+        $template_dir = ($page_name === 'home') ? 'index_template' : $page_name . '_template';
+        
+        // Create the new path
+        $new_section_path = $template_dir . '/' . $new_file_name;
+        
+        // Get website name from session
+        $website_name = isset($_SESSION['website_name']) ? $_SESSION['website_name'] : 'default_website';
+        
+        // Include config file safely
+        if (!defined('USER_WEBSITES')) {
+            require_once __DIR__. '/../config/config.php';
+        }
+        
+        // Create the physical file in the includes directory under the page's template folder
+        $user_website_path = USER_WEBSITES . '/' . $website_name . '/includes/' . $new_section_path;
+        
+        // Make sure the directory exists
+        $template_dir_path = dirname($user_website_path);
+        if (!is_dir($template_dir_path)) {
+            if (!mkdir($template_dir_path, 0755, true)) {
+                throw new Exception("Failed to create directory: $template_dir_path");
+            }
+        }
+        
+        // Create default content for the section
+        $default_content = "<!-- Section: {$section_name} for {$page_name} page -->\n";
+        $default_content .= "<div class=\"section {$section_name}-section\">\n";
+        $default_content .= "    <div class=\"container\">\n";
+        $default_content .= "        <h2>{$section_name}</h2>\n";
+        $default_content .= "        <p>This is the {$section_name} section content for the {$page_name} page.</p>\n";
+        $default_content .= "    </div>\n";
+        $default_content .= "</div>";
+        
+        // Write the content to the file
+        if (file_put_contents($user_website_path, $default_content) === false) {
+            throw new Exception("Failed to write to file: $user_website_path");
+        }
+        
+        // Add the section to the session
+        if (!isset($_SESSION['page_files'][$page_name]['section_files'])) {
+            $_SESSION['page_files'][$page_name]['section_files'] = [];
+        }
+        
+        // Create a default description
+        $section_description = 'Custom section for ' . $page_name . ' page';
+        
+        // Add the section to the page
+        $_SESSION['page_files'][$page_name]['section_files'][] = [
+            'name' => $new_file_name,
+            'path' => $new_section_path,
+            'type' => $section_type,
+            'description' => $section_description,
+            'content' => $default_content
+        ];
+        
+        // Add section to dependencies if not already there
+        if (!isset($_SESSION['page_files'][$page_name]['dependencies'])) {
+            $_SESSION['page_files'][$page_name]['dependencies'] = [];
+        }
+        
+        if (!in_array($new_section_path, $_SESSION['page_files'][$page_name]['dependencies'])) {
+            $_SESSION['page_files'][$page_name]['dependencies'][] = $new_section_path;
+        }
+        
+        // Update the folder structure in response_data
+        updateFolderStructure('add', $new_section_path, $new_file_name);
+        
+        echo json_encode(['success' => true, 'message' => 'Section added successfully']);
+    } catch (Exception $e) {
+        echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
     }
-    
-    // If duplicate found, return error
-    if ($duplicate) {
-        echo json_encode(['success' => false, 'message' => 'A section with this name already exists']);
-        return;
-    }
-    
-    // Create the template directory name based on the page
-    $template_dir = ($page_name === 'home') ? 'index_template' : $page_name . '_template';
-    
-    // Create the new path
-    $new_section_path = $template_dir . '/' . $new_file_name;
-    
-    // Add the section to the session
-    if (!isset($_SESSION['page_files'][$page_name]['section_files'])) {
-        $_SESSION['page_files'][$page_name]['section_files'] = [];
-    }
-    
-    // Create a default description
-    $section_description = 'Custom section for ' . $page_name . ' page';
-    
-    // Add the section to the page
-    $_SESSION['page_files'][$page_name]['section_files'][] = [
-        'name' => $new_file_name,
-        'path' => $new_section_path,
-        'type' => $section_type,
-        'description' => $section_description,
-        'content' => '<!-- ' . $section_name . ' section content -->'
-    ];
-    
-    // Add section to dependencies if not already there
-    if (!isset($_SESSION['page_files'][$page_name]['dependencies'])) {
-        $_SESSION['page_files'][$page_name]['dependencies'] = [];
-    }
-    
-    if (!in_array($new_section_path, $_SESSION['page_files'][$page_name]['dependencies'])) {
-        $_SESSION['page_files'][$page_name]['dependencies'][] = $new_section_path;
-    }
-    
-    // Update the folder structure in response_data
-    updateFolderStructure('add', $new_section_path, $new_file_name);
-    
-    echo json_encode(['success' => true, 'message' => 'Section added successfully']);
 }
 
 /**
@@ -174,6 +227,22 @@ function deleteSection() {
     // Get section path to remove from dependencies
     $sectionPath = $_SESSION['page_files'][$pageName]['section_files'][$sectionIndex]['path'];
     $sectionName = $_SESSION['page_files'][$pageName]['section_files'][$sectionIndex]['name'];
+    
+    // Get website name from session
+    $website_name = isset($_SESSION['website_name']) ? $_SESSION['website_name'] : 'default_website';
+    
+    // Include config file if USER_WEBSITES is not defined
+    if (!defined('USER_WEBSITES')) {
+        require_once __DIR__. '/../config/config.php';
+    }
+    
+    // Create the physical file path
+    $file_path = USER_WEBSITES . '/' . $website_name . '/includes/' . $sectionPath;
+    
+    // Delete the physical file if it exists
+    if (file_exists($file_path)) {
+        unlink($file_path);
+    }
     
     // Remove section from session
     array_splice($_SESSION['page_files'][$pageName]['section_files'], $sectionIndex, 1);

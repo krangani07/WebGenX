@@ -102,6 +102,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_section'])) {
         // Update section content
         $_SESSION['page_files'][$page]['section_files'][$section_index]['content'] = $_POST['section_content'];
         
+        // Get website name from session
+        $website_name = isset($_SESSION['website_name']) ? $_SESSION['website_name'] : 'default_website';
+        
+        // Include config file if USER_WEBSITES is not defined
+        if (!defined('USER_WEBSITES')) {
+            require_once '../../config/config.php';
+        }
+        
+        // Create the physical file paths
+        $old_file_path = USER_WEBSITES . '/' . $website_name . '/includes/' . $old_section_path;
+        $new_file_path = USER_WEBSITES . '/' . $website_name . '/includes/' . $new_section_path;
+        
+        // Make sure the directory for the new file exists
+        $new_dir_path = dirname($new_file_path);
+        if (!is_dir($new_dir_path)) {
+            if (!mkdir($new_dir_path, 0755, true)) {
+                $name_error = "Failed to create directory: $new_dir_path";
+                // Don't redirect if there's an error
+                goto display_form;
+            }
+        }
+        
+        // Write the updated content to the new file
+        if (file_put_contents($new_file_path, $_POST['section_content']) === false) {
+            $name_error = "Failed to write to file: $new_file_path";
+            // Don't redirect if there's an error
+            goto display_form;
+        }
+        
+        // If the file name has changed, delete the old file
+        if ($old_section_path !== $new_section_path && file_exists($old_file_path)) {
+            unlink($old_file_path);
+        }
+        
         // Update the folder structure in response_data
         include_once '../../includes/section_handler.php';
         updateFolderStructure('edit', $new_section_path, $new_file_name, $old_section_path, $old_section_name);
@@ -114,6 +148,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_section'])) {
 } else {
     $name_error = '';
 }
+
+// Label for goto statement
+display_form:
 
 // Get section content (or default if not set)
 $section_content = isset($section_data['content']) ? $section_data['content'] : '<!-- Section content goes here -->';

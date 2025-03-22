@@ -90,7 +90,21 @@ function confirmDeleteSection(sectionIndex, sectionName) {
             },
             body: 'action=delete&section_index=' + sectionIndex + '&page=' + document.querySelector('meta[name="current-page"]').getAttribute('content')
         })
-        .then(response => response.json())
+        .then(response => {
+            // Check if response is ok
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            // Try to parse as JSON, but handle text response as fallback
+            return response.text().then(text => {
+                try {
+                    return JSON.parse(text);
+                } catch (e) {
+                    console.error('Error parsing JSON:', text);
+                    throw new Error('Invalid JSON response from server');
+                }
+            });
+        })
         .then(data => {
             if (data.success) {
                 // Reload the page to reflect changes
@@ -101,7 +115,7 @@ function confirmDeleteSection(sectionIndex, sectionName) {
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('An error occurred while deleting the section.');
+            alert('An error occurred while deleting the section: ' + error.message);
         });
         
         // Hide the modal
@@ -235,7 +249,21 @@ document.addEventListener('DOMContentLoaded', function() {
             method: 'POST',
             body: formData
         })
-        .then(response => response.json())
+        .then(response => {
+            // Check if response is ok
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            // Try to parse as JSON, but handle text response as fallback
+            return response.text().then(text => {
+                try {
+                    return JSON.parse(text);
+                } catch (e) {
+                    console.error('Error parsing JSON:', text);
+                    throw new Error('Invalid JSON response from server');
+                }
+            });
+        })
         .then(data => {
             if (data.duplicate) {
                 // Show duplicate error
@@ -255,7 +283,21 @@ document.addEventListener('DOMContentLoaded', function() {
                     method: 'POST',
                     body: submitFormData
                 })
-                .then(response => response.json())
+                .then(response => {
+                    // Check if response is ok
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    // Try to parse as JSON, but handle text response as fallback
+                    return response.text().then(text => {
+                        try {
+                            return JSON.parse(text);
+                        } catch (e) {
+                            console.error('Error parsing JSON:', text);
+                            throw new Error('Invalid JSON response from server');
+                        }
+                    });
+                })
                 .then(data => {
                     if (data.success) {
                         // Reload the page to reflect changes
@@ -266,7 +308,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    alert('An error occurred while adding the section.');
+                    alert('An error occurred while adding the section: ' + error.message);
                 });
                 
                 // Hide the modal
@@ -275,7 +317,7 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('An error occurred while checking for duplicate sections.');
+            alert('An error occurred while checking for duplicate sections: ' + error.message);
         });
     });
     
