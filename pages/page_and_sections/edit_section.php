@@ -91,12 +91,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_section'])) {
         // Create the new path
         $new_section_path = $template_dir . '/' . $new_file_name;
         
+        // Store old values for updating folder structure
+        $old_section_path = $section_data['path'];
+        $old_section_name = $section_data['name'];
+        
         // Update the section data
         $_SESSION['page_files'][$page]['section_files'][$section_index]['name'] = $new_file_name;
         $_SESSION['page_files'][$page]['section_files'][$section_index]['path'] = $new_section_path;
         
         // Update section content
         $_SESSION['page_files'][$page]['section_files'][$section_index]['content'] = $_POST['section_content'];
+        
+        // Update the folder structure in response_data
+        include_once '../../includes/section_handler.php';
+        updateFolderStructure('edit', $new_section_path, $new_file_name, $old_section_path, $old_section_name);
         
         // Redirect back to page editor
         header('Location: page_editor.php?page=' . urlencode($page) . '&updated=true');

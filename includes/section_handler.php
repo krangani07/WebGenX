@@ -26,6 +26,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 /**
  * Check if a section with the given name already exists
  */
+/**
+ * Check if a section with the given name already exists
+ */
 function checkDuplicate() {
     $page_name = isset($_POST['page_name']) ? $_POST['page_name'] : '';
     $section_name = isset($_POST['section_name']) ? $_POST['section_name'] : '';
@@ -44,6 +47,9 @@ function checkDuplicate() {
     
     // Create the new file name with the proper suffix and .php extension
     $new_file_name = $section_name . $suffix . '.php';
+    
+    // Create the template directory name based on the page
+    $template_dir = ($page_name === 'home') ? 'index_template' : $page_name . '_template';
     
     // Check if section exists (case-insensitive)
     $duplicate = false;
@@ -108,8 +114,10 @@ function addSection() {
         return;
     }
     
+    // Create the template directory name based on the page
+    $template_dir = ($page_name === 'home') ? 'index_template' : $page_name . '_template';
+    
     // Create the new path
-    $template_dir = 'templates';
     $new_section_path = $template_dir . '/' . $new_file_name;
     
     // Add the section to the session
@@ -138,6 +146,9 @@ function addSection() {
         $_SESSION['page_files'][$page_name]['dependencies'][] = $new_section_path;
     }
     
+    // Update the folder structure in response_data
+    updateFolderStructure('add', $new_section_path, $new_file_name);
+    
     echo json_encode(['success' => true, 'message' => 'Section added successfully']);
 }
 
@@ -162,6 +173,7 @@ function deleteSection() {
     
     // Get section path to remove from dependencies
     $sectionPath = $_SESSION['page_files'][$pageName]['section_files'][$sectionIndex]['path'];
+    $sectionName = $_SESSION['page_files'][$pageName]['section_files'][$sectionIndex]['name'];
     
     // Remove section from session
     array_splice($_SESSION['page_files'][$pageName]['section_files'], $sectionIndex, 1);
@@ -171,5 +183,82 @@ function deleteSection() {
         array_splice($_SESSION['page_files'][$pageName]['dependencies'], $key, 1);
     }
     
+    // Update the folder structure in response_data
+    updateFolderStructure('delete', $sectionPath, $sectionName);
+    
     echo json_encode(['success' => true, 'message' => 'Section deleted successfully']);
+}
+
+/**
+ * Update the folder structure in response_data
+ * 
+ * @param string $action The action being performed (add, edit, delete)
+ * @param string $sectionPath The path of the section
+ * @param string $sectionName The name of the section file
+ * @param string $oldSectionPath The old path of the section (for edit action)
+ * @param string $oldSectionName The old name of the section file (for edit action)
+ */
+function updateFolderStructure($action, $sectionPath, $sectionName, $oldSectionPath = '', $oldSectionName = '') {
+    // Check if response_data exists
+    if (!isset($_SESSION['response_data']) || empty($_SESSION['response_data'])) {
+        return; // Nothing to update
+    }
+    
+    $websiteName = isset($_SESSION['website_name']) ? $_SESSION['website_name'] : 'website';
+    if (!isset($_SESSION['response_data'][$websiteName])) {
+        return; // Website not found in response_data
+    }
+    
+    // Parse the section path
+    $parts = explode('/', $sectionPath);
+    if (count($parts) < 2) {
+        return; // Invalid path format
+    }
+    
+    $template_dir = $parts[0];
+    $section_file = $parts[1];
+    
+    // Handle different actions
+    switch ($action) {
+        case 'add':
+            // Create template directory if it doesn't exist
+            if (!isset($_SESSION['response_data'][$websiteName]['includes'][$template_dir])) {
+                $_SESSION['response_data'][$websiteName]['includes'][$template_dir] = [];
+            }
+            
+            // Add section file to the template directory
+            $_SESSION['response_data'][$websiteName]['includes'][$template_dir][$section_file] = '';
+            break;
+            
+        case 'edit':
+            // If old path is provided, remove the old section first
+            if (!empty($oldSectionPath) && !empty($oldSectionName)) {
+                $old_parts = explode('/', $oldSectionPath);
+                if (count($old_parts) >= 2) {
+                    $old_template_dir = $old_parts[0];
+                    $old_section_file = $old_parts[1];
+                    
+                    // Remove old section
+                    if (isset($_SESSION['response_data'][$websiteName]['includes'][$old_template_dir][$old_section_file])) {
+                        unset($_SESSION['response_data'][$websiteName]['includes'][$old_template_dir][$old_section_file]);
+                    }
+                }
+            }
+            
+            // Create template directory if it doesn't exist
+            if (!isset($_SESSION['response_data'][$websiteName]['includes'][$template_dir])) {
+                $_SESSION['response_data'][$websiteName]['includes'][$template_dir] = [];
+            }
+            
+            // Add new section file
+            $_SESSION['response_data'][$websiteName]['includes'][$template_dir][$section_file] = '';
+            break;
+            
+        case 'delete':
+            // Remove section file from the template directory
+            if (isset($_SESSION['response_data'][$websiteName]['includes'][$template_dir][$section_file])) {
+                unset($_SESSION['response_data'][$websiteName]['includes'][$template_dir][$section_file]);
+            }
+            break;
+    }
 }
