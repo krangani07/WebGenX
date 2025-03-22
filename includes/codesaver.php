@@ -47,14 +47,14 @@ function extractAndSaveContent($response, $websiteName) {
                     // Save the content to the file WITHOUT removing the file path comment
                     if (file_put_contents($fullPath, trim($codeContent))) {
                         $results[] = "✅ Saved $language file: $filePath";
-                        error_log("Successfully saved $language file to: $fullPath");
+                        // error_log("Successfully saved $language file to: $fullPath");
                     } else {
                         $results[] = "❌ Failed to save $language file: $filePath";
-                        error_log("Failed to save $language file to: $fullPath");
+                        // error_log("Failed to save $language file to: $fullPath");
                     }
                 } else {
                     $results[] = "⚠️ No file path found in $language code block";
-                    error_log("No file path found in $language code block");
+                    // error_log("No file path found in $language code block");
                 }
             }
         }

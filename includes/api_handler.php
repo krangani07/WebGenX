@@ -503,7 +503,7 @@ class ApiHandler
         error_log("\n-------------------------------------------------------------------------------------------------------------//\n");
         
         // Include the codesaver.php file
-        require_once __DIR__ . '/../extras/codesaver.php';
+        require_once __DIR__ . '/codesaver.php';
         
         // Extract JSON data to get website name
         $jsonData = json_decode($generator->cleanJson($responseText), true);
