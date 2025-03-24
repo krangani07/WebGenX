@@ -43,7 +43,7 @@ if (isset($_POST['submit'])) {
                 $_SESSION['page_files'] = $response['page_files'];
                 $_SESSION['response_data'] = json_decode($response['data'], true);
                 // error_log("page_files:".print_r($response['page_files'],true));
-                // error_log("data:".print_r($response['data'],true));
+                error_log("data:".print_r($response['data'],true));
                 
                 // Redirect to the page editor with correct path
                 header('Location: /qp/WebGenX/pages/page_and_sections/page_editor.php');

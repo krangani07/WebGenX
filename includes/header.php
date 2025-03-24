@@ -18,7 +18,7 @@
                 </div>
                 <nav class="hidden md:flex space-x-6">
                     <a href="/qp/WebGenX/index.php" class="text-gray-700 hover:text-blue-600 transition duration-300">Dashboard</a>
-                    <a href="/qp/WebGenX/pages/pageEditor.php" class="text-gray-700 hover:text-blue-600 transition duration-300">Page Editor</a>
+                    <a href="/qp/WebGenX/pages/page_and_sections/page_editor.php" class="text-gray-700 hover:text-blue-600 transition duration-300">Page Editor</a>
                     <a href="/qp/WebGenX/pages/pageSectionEditor.php" class="text-gray-700 hover:text-blue-600 transition duration-300">Section Editor</a>
                     <a href="/qp/WebGenX/pages/templateManager.php" class="text-gray-700 hover:text-blue-600 transition duration-300">Templates</a>
                     <a href="/qp/WebGenX/pages/settings.php" class="text-gray-700 hover:text-blue-600 transition duration-300">Settings</a>

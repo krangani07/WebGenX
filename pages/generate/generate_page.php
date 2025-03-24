@@ -24,6 +24,19 @@ if (!isset($_SESSION['page_files'][$pageName])) {
     exit;
 }
 
+// Get the website name from session
+$websiteName = $_SESSION['website_name'] ?? 'Default Website';
+
+// Get header and footer content for reference
+$headerPath = USER_WEBSITES . "/{$websiteName}/includes/header.php";
+$footerPath = USER_WEBSITES . "/{$websiteName}/includes/footer.php";
+
+$headerContent = file_exists($headerPath) ? file_get_contents($headerPath) : '';
+$footerContent = file_exists($footerPath) ? file_get_contents($footerPath) : '';
+
+// Create header and footer reference
+$headerFooterReference = "```php\n// header.php\n{$headerContent}\n```\n\n```php\n// footer.php\n{$footerContent}\n```";
+
 // Prepare the data for the API handler
 $formData = [
     'websiteName' => $_SESSION['website_name'] ?? 'Default Website',
@@ -32,17 +45,22 @@ $formData = [
     'colorScheme' => $_SESSION['color_scheme'] ?? 'Default Color Scheme',
     'typography' => $_SESSION['typography'] ?? 'Default Typography',
     'pageName' => $pageName,
-    'sections' => $_SESSION['page_files'][$pageName]['section_files'] ?? []
+    // Include all page_files data for this page, not just section_files
+    'pageData' => $_SESSION['page_files'][$pageName] ?? [],
+    // Keep the sections for backward compatibility
+    'sections' => $_SESSION['page_files'][$pageName]['section_files'] ?? [],
+    // Add header and footer reference
+    'headerFooterReference' => $headerFooterReference
 ];
 
 // Log the data being sent to the API handler
-error_log('Data sent to API handler: ' . print_r($formData, true));
+// error_log('Data sent to API handler: ' . print_r($formData, true));
 
 // Call the API handler with the singlePage prompt type
 $response = handleApiRequest($formData, 'singlePage');
 
 // Log the response from the API handler
-error_log('Response from API handler: ' . print_r($response, true));
+// error_log('Response from API handler: ' . print_r($response, true));
 
 // Store the response in the session
 $_SESSION['generated_page'] = [

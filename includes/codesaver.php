@@ -41,28 +41,60 @@ function extractAndSaveContent($response, $websiteName) {
                     $directory = dirname($fullPath);
                     if (!is_dir($directory)) {
                         mkdir($directory, 0777, true);
-                        $results[] = "📁 Created directory: $directory";
+                        $results[] = [
+                            'type' => 'directory',
+                            'status' => 'created',
+                            'path' => $directory,
+                            'icon' => '📁'
+                        ];
                     }
                     
                     // Save the content to the file WITHOUT removing the file path comment
                     if (file_put_contents($fullPath, trim($codeContent))) {
-                        $results[] = "✅ Saved $language file: $filePath";
-                        // error_log("Successfully saved $language file to: $fullPath");
+                        $results[] = [
+                            'type' => $language,
+                            'status' => 'saved',
+                            'path' => $filePath,
+                            'icon' => '✅'
+                        ];
                     } else {
-                        $results[] = "❌ Failed to save $language file: $filePath";
-                        // error_log("Failed to save $language file to: $fullPath");
+                        $results[] = [
+                            'type' => $language,
+                            'status' => 'failed',
+                            'path' => $filePath,
+                            'icon' => '❌'
+                        ];
                     }
                 } else {
-                    $results[] = "⚠️ No file path found in $language code block";
-                    // error_log("No file path found in $language code block");
+                    $results[] = [
+                        'type' => $language,
+                        'status' => 'no_path',
+                        'path' => 'unknown',
+                        'icon' => '⚠️'
+                    ];
                 }
             }
         }
     }
     
-    // Log all results
-    foreach ($results as $result) {
-        error_log($result);
+    // Log all results in a table-like format
+    if (!empty($results)) {
+        error_log("┌─────────────┬──────────┬────────────────────────────────────────────┐");
+        error_log("│ Type        │ Status   │ Path                                       │");
+        error_log("├─────────────┼──────────┼────────────────────────────────────────────┤");
+        
+        foreach ($results as $result) {
+            $type = str_pad($result['type'], 11, ' ');
+            $status = str_pad($result['status'], 8, ' ');
+            $path = str_pad(substr($result['path'], 0, 39), 39, ' ');
+            error_log("│ {$type} │ {$status} │ {$result['icon']} {$path} │");
+        }
+        
+        error_log("└─────────────┴──────────┴────────────────────────────────────────────┘");
+    } else {
+        error_log("┌──────────────────────────────────────────────────────────────┐");
+        error_log("│ No code blocks processed                                     │");
+        error_log("└──────────────────────────────────────────────────────────────┘");
     }
     
     return [
@@ -71,5 +103,4 @@ function extractAndSaveContent($response, $websiteName) {
         'details' => $results
     ];
 }
-
 ?>

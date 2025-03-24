@@ -1,7 +1,10 @@
 <?php
 // Start output buffering to catch any unwanted output
 ob_start();
-session_start();
+// Check if a session is already active before starting one
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
 
 // Check if the request is a POST request
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

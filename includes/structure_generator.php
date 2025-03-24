@@ -7,6 +7,7 @@
 
 class StructureGenerator {
     private $basePath;
+    private $logEntries = [];
     
     /**
      * Constructor
@@ -36,13 +37,17 @@ class StructureGenerator {
         $structure = json_decode($jsonString, true);
         
         if ($structure === null) {
-            error_log("Error parsing JSON: " . json_last_error_msg());
+            $this->logEntry("Error", "JSON Parsing", json_last_error_msg(), "❌");
             return false;
         }
         
         // Create the structure
         $this->createStructure($this->basePath, $structure);
-        error_log("Structure creation completed successfully");
+        $this->logEntry("Success", "Structure", "Creation completed successfully", "✅");
+        
+        // Display the log table
+        $this->displayLogTable();
+        
         return true;
     }
     
@@ -75,9 +80,9 @@ class StructureGenerator {
                 // Create directory
                 if (!file_exists($path)) {
                     if (mkdir($path, 0777, true)) {
-                        error_log("Created directory: $path");
+                        $this->logEntry("Created", "Directory", $path, "📁");
                     } else {
-                        error_log("Failed to create directory: $path");
+                        $this->logEntry("Failed", "Directory", $path, "❌");
                     }
                 }
                 
@@ -89,9 +94,9 @@ class StructureGenerator {
                 // Create file
                 if (!file_exists($path)) {
                     if (touch($path)) {
-                        error_log("Created file: $path");
+                        $this->logEntry("Created", "File", $path, "📄");
                     } else {
-                        error_log("Failed to create file: $path");
+                        $this->logEntry("Failed", "File", $path, "❌");
                     }
                 }
             }
@@ -99,121 +104,52 @@ class StructureGenerator {
     }
     
     /**
-     * Extract code blocks from a string
+     * Add a log entry
      * 
-     * @param string $content String containing code blocks
-     * @return array Array of extracted code blocks with language and content
+     * @param string $status Status of the operation
+     * @param string $type Type of item (File, Directory, etc.)
+     * @param string $path Path or message
+     * @param string $icon Icon to display
      */
-    public function extractCodeBlocks($content) {
-        $codeBlocks = [];
-        $languages = ['php', 'css', 'js', 'javascript', 'json', 'html'];
-        
-        // Pattern to match code blocks with language identifier
-        $pattern = '/```(' . implode('|', $languages) . ')\s*(.*?)\s*```/s';
-        
-        if (preg_match_all($pattern, $content, $matches, PREG_SET_ORDER)) {
-            foreach ($matches as $match) {
-                $language = $match[1];
-                $code = trim($match[2]);
-                
-                // Normalize language name
-                if ($language === 'js') {
-                    $language = 'javascript';
-                }
-                
-                // Extract file path using multiple patterns
-                $filePath = null;
-                
-                // First line patterns for different comment styles
-                $firstLine = strtok($code, "\n");
-                
-                if (preg_match('/^\s*<\?php\s*\/\/\s*(.*?)\s*(\?>)?/', $firstLine, $pathMatch)) {
-                    // PHP comment: <?php // includes/header.php /?/>
-                    $filePath = trim($pathMatch[1]);
-                } elseif (preg_match('/^\s*\/\/\s*(.*?)$/', $firstLine, $pathMatch)) {
-                    // JS comment: // assets/js/global.js
-                    $filePath = trim($pathMatch[1]);
-                } elseif (preg_match('/^\s*\/\*\s*(.*?)\s*\*\//', $firstLine, $pathMatch)) {
-                    // CSS comment: /* assets/css/global.css */
-                    $filePath = trim($pathMatch[1]);
-                } elseif (preg_match('/^\s*<!--\s*(.*?)\s*-->/', $firstLine, $pathMatch)) {
-                    // HTML comment: <!-- includes/header.php -->
-                    $filePath = trim($pathMatch[1]);
-                }
-                
-                // If file path found, remove the first line from the code
-                if ($filePath) {
-                    // Remove the first line (file path comment)
-                    $lines = explode("\n", $code);
-                    array_shift($lines);
-                    $code = trim(implode("\n", $lines));
-                }
-                
-                // Debug logging
-                error_log("Extracted code block: Language=$language, FilePath=" . ($filePath ? $filePath : "NONE"));
-                
-                $codeBlocks[] = [
-                    'language' => $language,
-                    'content' => $code,
-                    'file_path' => $filePath
-                ];
-            }
-        }
-        
-        return $codeBlocks;
+    private function logEntry($status, $type, $path, $icon) {
+        $this->logEntries[] = [
+            'status' => $status,
+            'type' => $type,
+            'path' => $path,
+            'icon' => $icon
+        ];
     }
     
     /**
-     * Save extracted code blocks to files
-     * 
-     * @param array $codeBlocks Array of code blocks
-     * @param string $websiteName Name of the website (for path prefixing)
-     * @return array Results of the save operation
+     * Display log entries in a table format
      */
-    public function saveCodeBlocks($codeBlocks, $websiteName = '') {
-        $results = [];
-        
-        foreach ($codeBlocks as $block) {
-            if (empty($block['file_path'])) {
-                $results[] = "⚠️ Skipped code block with no file path";
-                continue;
-            }
-            
-            $filePath = $block['file_path'];
-            
-            // Prepend website name if provided and not already included
-            if (!empty($websiteName) && strpos($filePath, $websiteName) === false) {
-                $firstDir = explode('/', $filePath)[0];
-                if (in_array($firstDir, ['assets', 'includes', 'pages'])) {
-                    $filePath = $websiteName . '/' . $filePath;
-                }
-            }
-            
-            // Prepend base path
-            $fullPath = $this->basePath . '/' . $filePath;
-            
-            try {
-                // Create directory if it doesn't exist
-                $dirPath = dirname($fullPath);
-                if (!is_dir($dirPath)) {
-                    mkdir($dirPath, 0777, true);
-                    $results[] = "📁 Created directory: $dirPath";
-                }
-                
-                // Add PHP opening tag for PHP files if not present
-                $content = $block['content'];
-                if (pathinfo($filePath, PATHINFO_EXTENSION) === 'php' && strpos($content, '<?php') === false) {
-                    $content = "<?php\n" . $content;
-                }
-                
-                // Save the code to the file
-                file_put_contents($fullPath, $content);
-                $results[] = "✅ Saved: $filePath";
-            } catch (Exception $e) {
-                $results[] = "❌ Error saving $filePath: " . $e->getMessage();
-            }
+    private function displayLogTable() {
+        if (empty($this->logEntries)) {
+            error_log("┌──────────────────────────────────────────────────────────────┐");
+            error_log("│ No operations performed                                      │");
+            error_log("└──────────────────────────────────────────────────────────────┘");
+            return;
         }
         
-        return $results;
+        error_log("┌──────────┬───────────┬────────────────────────────────────────────┐");
+        error_log("│ Status   │ Type      │ Path/Message                               │");
+        error_log("├──────────┼───────────┼────────────────────────────────────────────┤");
+        
+        foreach ($this->logEntries as $entry) {
+            $status = str_pad($entry['status'], 8, ' ');
+            $type = str_pad($entry['type'], 9, ' ');
+            $path = $entry['path'];
+            
+            // Truncate path if too long
+            if (strlen($path) > 39) {
+                $path = "..." . substr($path, -36);
+            }
+            $path = str_pad($path, 39, ' ');
+            
+            error_log("│ {$status} │ {$type} │ {$entry['icon']} {$path} │");
+        }
+        
+        error_log("└──────────┴───────────┴────────────────────────────────────────────┘");
+        error_log("Total operations: " . count($this->logEntries));
     }
 }
