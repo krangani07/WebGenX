@@ -253,18 +253,27 @@ class ApiHandler
 
     private function singlePagePrompt()
     {
-        $promptText = "You are WebGenX, an expert AI web developer. Your job is to generate structured, scalable, interactive website code based on user specifications. Follow the format strictly. Do NOT generate extra text or explanation.\n\n";
+        $promptText = "You are WebGenX, an expert AI web developer. Your job is to generate structured, scalable, interactive website code based on user specifications. Follow the format strictly. Do NOT generate header.php or footer.php files - these already exist and will be included automatically in main page so make the main page and include all the sections you generate.\n\n";
 
         // General Guidelines
         $promptText .= "### General Guidelines:\n";
         $promptText .= "- Follow best practices in **HTML5, CSS3, JS (ES6+), and PHP 8.2+**.\n";
         $promptText .= "- Code must be **clean, modular**, and organized into **separate files**.\n";
-        $promptText .= "- Use the existing **header.php** and **footer.php** for main {$this->formData['pageName']} (do not generate new ones).\n";
+        $promptText .= "- Focus only on generating the page-specific sections and JavaScript for {$this->formData['pageName']}.\n";
         $promptText .= "- All output must be **PHP code blocks**, with a comment at the top specifying the file path like this:\n";
-        $promptText .= "  `<?php // includes/home_template/hero_home.php ?>`\n";
+        $promptText .= "  `<?php // includes/{$this->formData['pageName']}_template/{sectionName}_{$this->formData['pageName']}.php ?>`\n";
         $promptText .= "- Do not include inline styles or JS in PHP files unless essential.\n";
         $promptText .= "- Use **Tailwind CSS** for styling and **DaisyUI** for UI components.\n";
-        $promptText .= "- Use **Heroicons 2** and **custom SVG icons** where needed.\n\n";
+        $promptText .= "- Use **Heroicons 2** and **custom SVG icons** where needed.\n";
+        $promptText .= "- **IMPORTANT**: Include CDN links for all libraries used (Tailwind CSS, DaisyUI, GSAP, etc.) in your code.\n";
+        $promptText .= "- Make sure your sections are compatible with the provided header and footer structure.\n\n";
+
+        // Add instruction for automatic file path comments
+        $promptText .= "- **IMPORTANT**: Always add a comment at the top of each file with its full path. For example:\n";
+        $promptText .= "  - For main page: `<?php // pages/{$this->formData['pageName']}.php ?>`\n";
+        $promptText .= "  - For section files: `<?php // includes/{$this->formData['pageName']}_template/{sectionName}_{$this->formData['pageName']}.php ?>`\n";
+        $promptText .= "  - For JS files: `// assets/js/{$this->formData['pageName']}.js`\n";
+        $promptText .= "  - For CSS files: `/* assets/css/{$this->formData['pageName']}.css */`\n\n";
 
         $promptText .= "---\n\n";
 
@@ -276,8 +285,11 @@ class ApiHandler
         $promptText .= "- Animate section titles, images, call-to-actions, and feature blocks.\n";
         $promptText .= "- Use **hover effects** and **smooth transitions** for buttons, links, cards.\n";
         $promptText .= "- Implement **lazy loading** for images/videos for performance.\n";
-        $promptText .= "- Write **page-specific JS files** for each page (e.g., `assets/js/home.js`) and a shared `main.js` for global features.\n";
-        $promptText .= "- Add **script tags** in the generated page files to include relevant JS.\n\n";
+        $promptText .= "- Write **page-specific JS files** for each page (e.g., `assets/js/{$this->formData['pageName']}.js`) and a shared `global.js` for global features.\n";
+        $promptText .= "- Add **script tags** in the generated page files to include relevant JS.\n";
+        $promptText .= "- **Always include CDN links** for any JavaScript libraries you use.\n\n";
+        $promptText .= "- **the animations shouid be interactive but minimilast\n\n";
+        $promptText .= "- **i dont want that when i scroll up the annimation should not repeat.\n\n";
 
         $promptText .= "---\n\n";
 
@@ -297,20 +309,18 @@ class ApiHandler
         $promptText .= "- Generate a **JSON-formatted file/folder tree** first.\n";
         $promptText .= "- Organize assets: `/assets/js/`, `/assets/css/`, `/assets/images/`, `/assets/fonts/`.\n";
         $promptText .= "- Include PHP files in `/pages/` and partials in `/includes/`.\n\n";
-        $promptText .= " - Example format:\n\n";
-        $promptText .= " ```json\n";
-        $promptText .= "   {\n";
-        $promptText .= "  \"WebsiteName\": {\n";
+        $promptText .= "Example format:\n";
+        $promptText .= "```json\n";
+        $promptText .= "{\n";
+        $promptText .= "  \"" . $this->formData['websiteName'] . "\": {\n";
         $promptText .= "    \"assets\": {\n";
         $promptText .= "      \"css\": {\n";
         $promptText .= "        \"global.css\": \"\",\n";
-        $promptText .= "        \"[pagename].css\": \"\", // if needed\n";
-        $promptText .= "        // other css files\n";
+        $promptText .= "        \"{$this->formData['pageName']}.css\": \"\" // if needed\n";
         $promptText .= "      },\n";
         $promptText .= "      \"js\": {\n";
         $promptText .= "        \"global.js\": \"\",\n";
-        $promptText .= "        \"[pagename].js\": \"\",\n";
-        $promptText .= "        // other pages js file\n";
+        $promptText .= "        \"{$this->formData['pageName']}.js\": \"\"\n";
         $promptText .= "      },\n";
         $promptText .= "      \"images\": {},\n";
         $promptText .= "      \"fonts\": {}\n";
@@ -318,74 +328,89 @@ class ApiHandler
         $promptText .= "    \"includes\": {\n";
         $promptText .= "      \"header.php\": \"\",\n";
         $promptText .= "      \"footer.php\": \"\",\n";
-        $promptText .= "      \"[pagename]_template\": {\n";
-        $promptText .= "        \"[sectionname]_[pagename].php\": \"\",\n";
-        $promptText .= "        // list all thee section used for the [pagename] \n";
-        $promptText .= "      },\n";
-        $promptText .= "      //  other page templets folders \n";
+        $promptText .= "      \"{$this->formData['pageName']}_template\": {\n";
+        
+        // Add section files dynamically based on the sections provided
+        if (!empty($this->formData['sections'])) {
+            foreach ($this->formData['sections'] as $sectionId => $section) {
+                $sectionName = is_array($section) ? $section['name'] : $section;
+                $promptText .= "        \"{$sectionName}\": \"\",\n";
+            }
+        } else {
+            $promptText .= "        \"[sectionname]_{$this->formData['pageName']}.php\": \"\"\n";
+        }
+        
+        $promptText .= "      }\n";
         $promptText .= "    },\n";
         $promptText .= "    \"pages\": {\n";
         $promptText .= "      \"index.php\": \"\",\n";
-        $promptText .= "      // oterh pages php files\n";
+        $promptText .= "      \"{$this->formData['pageName']}.php\": \"\"\n";
         $promptText .= "    }\n";
         $promptText .= "  }\n";
         $promptText .= "}\n";
-        $promptText .= " ```\n";
+        $promptText .= "```\n";
+        $promptText .= "1. this is just folder structure..\n";
 
         $promptText .= "---\n\n";
 
         // Output Format
         $promptText .= "### Output Format:\n";
-        $promptText .= "1. First, output the **JSON file structure**.\n";
-        $promptText .= "2. Then, output the **PHP code blocks** for each page and section.\n";
-        $promptText .= "3. Then, output the **JavaScript code blocks**, one per file:\n";
-        $promptText .= "   - Use `<?php // assets/js/home.js ?>` at the top of each block.\n";
+        $promptText .= "1. First, output the JSON file structure. no code inside this structure\n";
+        $promptText .= "2. Then, output the PHP code blocks for each page and section.\n";
+        $promptText .= "3. Then, output the JavaScript code blocks, one per file:\n";
+        $promptText .= "   - Use // assets/js/{$this->formData['pageName']}.js at the top of each block.\n";
         $promptText .= "   - Include page-specific interactions and animations.\n";
-        $promptText .= "   - Use event listeners like `DOMContentLoaded`.\n\n";
-
-        $promptText .= "---\n\n";
-
-        $promptText .= " ```code\n";
-        $promptText .= "    <!-- /WebsiteName or root foldername/includes/PageName_template/SectionName_PageName.php -->\n";
-        $promptText .= "    // code for the block\n";
-        $promptText .= "```\n\n";
-
-        // Code Quality
-        $promptText .= "### Code Quality:\n";
-        $promptText .= "- Maintain consistent naming for classes, ids, and file names.\n";
-        $promptText .= "- Follow semantic HTML structure.\n";
-        $promptText .= "- Avoid unnecessary code repetition.\n";
-        $promptText .= "- Optimize for performance (minified assets, async loading).\n\n";
-
-        // Final Instructions
-        $promptText .= "### Final Instructions:\n";
-        $promptText .= "- Do NOT generate explanatory text or notes.\n";
-        $promptText .= "- Generate code only inside PHP blocks with proper file paths.\n";
-        $promptText .= "- Keep code modular, clean, and fully interactive.\n\n";
-
-        $promptText .= "---\n\n";
-
-        // Website-specific information
+        $promptText .= "   - Use event listeners like DOMContentLoaded.\n\n";
+        
+        // General Info
         $promptText .= "General Info:\n";
         $promptText .= "- Website Name: {$this->formData['websiteName']}\n";
         $promptText .= "- Page Name: {$this->formData['pageName']}\n";
-        $promptText .= '- Website Purpose: ' . ($this->formData['websiteType'] ?? 'Business') . "\n";
-        $promptText .= '- Description: ' . ($this->formData['description'] ?? '') . "\n";
-        $promptText .= '- Color Scheme: ' . ($this->formData['colorScheme'] ?? 'blue for hover effects, black or dark theme, white, skyblue for text') . "\n";
-        $promptText .= '- Typography: ' . ($this->formData['typography'] ?? 'modern') . "\n";
+        $promptText .= "- Website Purpose: {$this->formData['websiteType']}\n";
+        $promptText .= "- Description: {$this->formData['description']}\n";
+        $promptText .= "- Color Scheme: {$this->formData['colorScheme']}\n";
+        $promptText .= "- Typography: {$this->formData['typography']}\n";
         $promptText .= "- Folder Path for Sections: includes/{$this->formData['pageName']}_template/\n\n";
 
-        $promptText .= "---\n\n";
-
+        // Header and Footer Reference
+        $promptText .= "### Header and Footer Reference:\n";
+        
+        // Check if header and footer references are provided in the form data
+        if (isset($this->formData['headerFooterReference'])) {
+            $promptText .= $this->formData['headerFooterReference'] . "\n\n";
+        } else {
+            // Default placeholder
+            $promptText .= "The header includes a responsive navigation bar with the website name and main navigation links.\n";
+            $promptText .= "The footer includes copyright information, social media links, and additional navigation.\n\n";
+        }
+        $promptText .= "as you can see the you have to write complet code except the header and footer the main file should do have ll the necessary metatags and links \n";
+        
         // Sections for this page
-        $promptText .= "Sections for this page (generate each as a **separate PHP file** with only the section code):\n";
+        $promptText .= "Sections for this page (generate each as a separate PHP file with only the section code):\n";
         if (!empty($this->formData['sections'])) {
             foreach ($this->formData['sections'] as $sectionId => $section) {
                 $sectionName = is_array($section) ? $section['name'] : $section;
-                // Use the exact section name from the session without modification
-                $promptText .= "- {$sectionName}\n";
+                $promptText .= "- {$sectionName}_{$this->formData['pageName']}.php\n";
             }
         }
+        
+        $promptText .= "\n";
+        
+        // Main page file instructions
+        $promptText .= "Generate the main page file: /pages/{$this->formData['pageName']}.php. This should:\n";
+        $promptText .= "- Start with `<?php // pages/{$this->formData['pageName']}.php ?>`\n";
+        $promptText .= "- Include header.php at the top\n";
+        $promptText .= "- Include each section file in order (as listed above)\n";
+        $promptText .= "- Include footer.php at the bottom\n\n";
+        
+        $promptText .= "For maps, use one of these free alternatives instead of Google Maps:\n";
+        $promptText .= "- OpenStreetMap with Leaflet.js: Include the CDN: '<link rel=\"stylesheet\" href=\"https://unpkg.com/leaflet@1.9.4/dist/leaflet.css\" />' and '<script src=\"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js\"></script>'\n";
+        $promptText .= "- MapBox (free tier): Use their JavaScript and CSS CDNs\n";
+        $promptText .= "- OpenLayers: Include the CDN: '<script src=\"https://cdn.jsdelivr.net/npm/ol@v7.4.0/dist/ol.js\"></script>' and '<link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/ol@v7.4.0/ol.css\">''\n\n";
+        
+        $promptText .= "**For image placeholders, use strictly in src attribute the path 'https://placehold.co/600x400/000000/FFF.webp'.**\n";
+        $promptText .= "**For navigation links, use this format: ../pages/[pagename].php**\n";
+        $promptText .= "**For including any pages|js|css, use this format: '../'**\n";
 
         error_log("\n-------------------------------------------------------------------------------------------------------------//\n");
         error_log('single page prompt::==' . $promptText);
@@ -453,15 +478,67 @@ class ApiHandler
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+        // Add timeout to prevent hanging requests
+        curl_setopt($ch, CURLOPT_TIMEOUT, 120); // 2 minute timeout
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 30); // 30 second connection timeout
 
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        
+        // Check for curl errors
+        if ($response === false) {
+            $error = curl_error($ch);
+            curl_close($ch);
+            error_log("API call failed: " . $error);
+            return $this->handleApiError($httpCode, "API call failed: " . $error);
+        }
+        
         curl_close($ch);
-        $response     = json_decode($response, true);
-        $responseText = $response['candidates'][0]['content']['parts']['0']['text'];
+        
+        // Try to decode the JSON response
+        $decodedResponse = json_decode($response, true);
+        
+        // Check if JSON decoding was successful
+        if ($decodedResponse === null && json_last_error() !== JSON_ERROR_NONE) {
+            error_log("JSON decode error: " . json_last_error_msg());
+            return $this->handleApiError($httpCode, "Invalid JSON response: " . json_last_error_msg());
+        }
+        
+        // Validate response structure
+        if (!isset($decodedResponse['candidates'][0]['content']['parts'][0]['text'])) {
+            error_log("Unexpected API response structure");
+            return $this->handleApiError($httpCode, "Unexpected API response structure");
+        }
+        
+        $responseText = $decodedResponse['candidates'][0]['content']['parts'][0]['text'];
 
         // Process response based on prompt type
         return $this->processResponse($responseText, $httpCode);
+    }
+    
+    /**
+     * Handles API errors and returns a standardized error response
+     *
+     * @param int $httpCode HTTP status code
+     * @param string $errorMessage Error message
+     * @return array Error response data
+     */
+    private function handleApiError($httpCode, $errorMessage)
+    {
+        // Log the error with a formatted message
+        error_log("┌─────────────────────────────────────────────────────────────────┐");
+        error_log("│ API ERROR: " . str_pad($httpCode, 48, " ", STR_PAD_RIGHT) . "│");
+        error_log("├─────────────────────────────────────────────────────────────────┤");
+        error_log("│ " . str_pad($errorMessage, 63, " ", STR_PAD_RIGHT) . "│");
+        error_log("└─────────────────────────────────────────────────────────────────┘");
+        
+        // Return a standardized error response
+        return [
+            'code' => $httpCode,
+            'error' => true,
+            'message' => $errorMessage,
+            'data' => null
+        ];
     }
 
     /**
@@ -473,6 +550,11 @@ class ApiHandler
      */
     private function processResponse($responseText, $httpCode)
     {
+        // Log the response length for debugging
+        $responseLength = strlen($responseText);
+        error_log("Received API response: {$responseLength} characters, HTTP code: {$httpCode}");
+        
+        // Process based on prompt type
         switch ($this->promptType) {
             case 'master':
                 return $this->processMasterResponse($responseText, $httpCode);
@@ -487,62 +569,53 @@ class ApiHandler
 
     /**
      * Processes the response for master prompt type
-     * Creates website structure from JSON response
+     * Creates website structure from JSON response and extracts code blocks
      *
      * @param string $responseText The text response from the API
      * @param int $httpCode HTTP status code from the API call
-     * @return array Processed response data
+     * @return array Processed response data with page structure
      */
     private function processMasterResponse($responseText, $httpCode)
     {
         // Use the structure generator to create files and folders
         require_once __DIR__ . '/structure_generator.php';
         $generator = new StructureGenerator(USER_WEBSITES);
-        error_log("\n-------------------------------------------------------------------------------------------------------------//\n");
-        error_log('master response::=='. $responseText);
-        error_log("\n-------------------------------------------------------------------------------------------------------------//\n");
+        // error_log("\n-------------------------------------------------------------------------------------------------------------//\n");
+        // error_log('master response::=='. $responseText);
+        // error_log("\n-------------------------------------------------------------------------------------------------------------//\n");
         
         // Include the codesaver.php file
-        require_once __DIR__ . '/../extras/codesaver.php';
+        require_once __DIR__ . '/codesaver.php';
         
         // Extract JSON data to get website name
         $jsonData = json_decode($generator->cleanJson($responseText), true);
         $websiteName = $jsonData ? array_key_first($jsonData) : 'custom_website';
         
-        // Call the extractAndSaveContent function from codesaver.php
+        // Create the folder structure based on JSON
+        $generator->createFromJson($responseText);
+
+        // Call the extractAndSaveContent function from codesaver.php to save code blocks
         $saveResult = extractAndSaveContent($responseText, $websiteName);
         error_log("Code extraction result: " . ($saveResult['success'] ? "Success" : "Failed") . " - " . $saveResult['message']);
         
-        // Extract code blocks and save them to their respective files
-        $codeBlocks = $generator->extractCodeBlocks($responseText);
-        $saveResults = $generator->saveCodeBlocks($codeBlocks, $websiteName);
-        
-        // Log the results of code extraction
-        foreach ($saveResults as $result) {
-            error_log($result);
-        }
-        
-        // Create the folder structure based on JSON
-        $generator->createFromJson($responseText);
-        
         // Clean response to json before further processing
         $responseText = $generator->cleanJson($responseText);
+        
         // Create an array to store all pages and their required files
         $pageFiles = [];
         $jsonData = json_decode($responseText, true);
 
-        // Rest of the method remains unchanged
+        // Process pages directory to build dependency structure
         if ($jsonData) {
             $websiteName = array_key_first($jsonData);
             
-            // Process pages directory
+            // Process pages directory to build dependency structure
             if (isset($jsonData[$websiteName]['pages'])) {
-                // Existing code continues...
                 foreach ($jsonData[$websiteName]['pages'] as $pageFile => $content) {
-                    // Handle home page (index.php) correctly
-                    $pageName    = ($pageFile === 'index.php') ? 'home' : pathinfo($pageFile, PATHINFO_FILENAME);
-                    $templateDir = ($pageName === 'home') ? 'index_template' : $pageName . '_template';
-
+                    // Get page name from file name
+                    $pageName = pathinfo($pageFile, PATHINFO_FILENAME);
+                    
+                    // Initialize page files structure
                     $pageFiles[$pageName] = [
                         'main_file'     => basename($pageFile),
                         'js_files'      => [],
@@ -553,8 +626,25 @@ class ApiHandler
                         ]
                     ];
 
+                    // Find the corresponding template directory in the JSON structure
+                    $templateDir = null;
+                    foreach ($jsonData[$websiteName]['includes'] as $dirName => $dirContent) {
+                        // Check if this is a template directory for the current page
+                        if (strpos($dirName, '_template') !== false && 
+                            (strpos($dirName, $pageName) !== false || 
+                            ($pageName === 'index' && strpos($dirName, 'index') !== false))) {
+                            $templateDir = $dirName;
+                            break;
+                        }
+                    }
+                    
+                    // If no template directory found, use a fallback
+                    if ($templateDir === null) {
+                        $templateDir = $pageName . '_template';
+                    }
+
                     // Add page-specific JS files
-                    $jsFileName = ($pageName === 'home') ? 'index.js' : $pageName . '.js';
+                    $jsFileName = $pageName . '.js';
                     if (isset($jsonData[$websiteName]['assets']['js'][$jsFileName])) {
                         $pageFiles[$pageName]['js_files'][] = $jsFileName;
                     }
@@ -567,7 +657,7 @@ class ApiHandler
                     // Add section template files
                     if (isset($jsonData[$websiteName]['includes'][$templateDir])) {
                         foreach ($jsonData[$websiteName]['includes'][$templateDir] as $sectionFile => $content) {
-                            $sectionFileName                         = basename($sectionFile);
+                            $sectionFileName = basename($sectionFile);
                             $pageFiles[$pageName]['section_files'][] = [
                                 'name' => $sectionFileName,
                                 'path' => $templateDir . '/' . $sectionFileName
@@ -607,12 +697,27 @@ class ApiHandler
      */
     private function processSinglePageResponse($responseText, $httpCode)
     {
-        // Process single page response
-        // You can create a specific handler for single page responses
+        // Use the structure generator to create files and folders if needed
+        require_once __DIR__ . '/structure_generator.php';
+        $generator = new StructureGenerator(USER_WEBSITES);
+        
+        // Include the codesaver.php file
+        require_once __DIR__ . '/codesaver.php';
+        
+        // Extract JSON data to get website name
+        $jsonData = json_decode($generator->cleanJson($responseText), true);
+        $websiteName = $jsonData ? array_key_first($jsonData) : $this->formData['websiteName'];
+        
+        // Call the extractAndSaveContent function from codesaver.php to save code blocks
+        // Pass an additional parameter to indicate we want to overwrite existing files
+        $saveResult = extractAndSaveContent($responseText, $websiteName, true); // Added true parameter for overwrite
+        error_log("Code extraction result: " . ($saveResult['success'] ? "Success" : "Failed") . " - " . $saveResult['message']);
+        
         return [
             'code' => $httpCode,
             'data' => $responseText,
-            'type' => 'singlePage'
+            'type' => 'singlePage',
+            'save_result' => $saveResult
         ];
     }
 

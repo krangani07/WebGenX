@@ -10,7 +10,7 @@
             <form action="" method="post" id="generatorForm">
 
                 <div class="mb-4">
-                    <label for="websiteName" class="block text-gray-700 font-medium mb-2">Color Scheme</label>
+                    <label for="websiteName" class="block text-gray-700 font-medium mb-2">Website Name</label>
                     <input type="text" id="websiteName" name="websiteName" 
                         class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="Website Name" value="kaushal">
