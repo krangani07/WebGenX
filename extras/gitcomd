@@ -1,0 +1,4 @@
+git add .                                       :: add current directory
+git add <file or folder>                        :: in current directory
+git commit -m "name of commit"                  :: save or create a check point
+git commit -m "name of commit" --amend          :: save and add change to the named branch instad of creating new branch

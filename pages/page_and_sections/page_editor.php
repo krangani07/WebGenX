@@ -1,6 +1,7 @@
 <?php
 session_start();
 include '../../includes/header.php';  // Updated path to correctly point to the includes directory
+require_once '../../config/config.php';
 $current_page = isset($_GET['page']) ? $_GET['page'] : (isset($_SESSION['page_files']) && !empty($_SESSION['page_files']) ? key($_SESSION['page_files']) : 'home');
 ?>
 <!-- Meta tag for current page (for JavaScript) -->
@@ -8,9 +9,69 @@ $current_page = isset($_GET['page']) ? $_GET['page'] : (isset($_SESSION['page_fi
 
 <!-- Main Content Area -->
 <div class="container mx-auto px-4 py-6">
-    <!-- Navigation Bar -->
+    <!-- Navigation Bar with Progress Bar -->
+    <!-- Navigation Bar with Progress Bar -->
     <div class="w-full bg-white rounded-lg shadow-sm mb-6 p-4">
-        <div class="text-center font-mono text-gray-700">nav bar</div>
+        <div class="text-center font-mono text-gray-700 mb-2">Website Generation Progress</div>
+        
+        <!-- Progress Bar Container -->
+        <div class="w-full bg-gray-200 rounded-full h-4 mb-2">
+            <?php
+            // Calculate progress based on generated pages
+            $totalPages = isset($_SESSION['page_files']) ? count($_SESSION['page_files']) : 0;
+            $generatedPages = 0;
+            
+            if (isset($_SESSION['page_files']) && !empty($_SESSION['page_files'])) {
+                $websiteName = $_SESSION['website_name'] ?? 'website';
+                
+                foreach ($_SESSION['page_files'] as $page_key => $page_data) {
+                    // Check if the page file exists and has content
+                    $pagePath = "c:/xampp/htdocs/qp/WebGenX/tests/{$websiteName}/pages/{$page_key}.php";
+                    
+                    if (file_exists($pagePath) && filesize($pagePath) > 0) {
+                        $generatedPages++;
+                        // Update the session to mark this page as generated
+                        $_SESSION['page_files'][$page_key]['generated'] = true;
+                    } else {
+                        // If file doesn't exist or is empty, mark as not generated
+                        $_SESSION['page_files'][$page_key]['generated'] = false;
+                    }
+                }
+            }
+            
+            $progressPercentage = $totalPages > 0 ? ($generatedPages / $totalPages) * 100 : 0;
+            ?>
+            <div id="progressBar" class="bg-blue-600 h-4 rounded-full transition-all duration-300" 
+                 style="width: <?php echo $progressPercentage; ?>%"></div>
+        </div>
+        
+        <!-- Progress Status Text -->
+        <div id="progressStatus" class="text-center text-sm text-gray-600">
+            <?php echo $generatedPages; ?> of <?php echo $totalPages; ?> pages generated
+        </div>
+        
+        <!-- Generate All Pages Button -->
+        <div class="mt-4 text-center">
+            <button id="generateAllPagesBtn" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition duration-300 inline-flex items-center justify-center">
+                <i class="fas fa-cogs mr-2"></i> Generate All Pages
+                <div id="generateAllLoader" class="hidden ml-2">
+                    <i class="fas fa-spinner fa-spin"></i>
+                </div>
+            </button>
+        </div>
+        
+        <!-- Full-page Loader for Generation Process -->
+        <div id="fullPageLoader" class="fixed inset-0 bg-black bg-opacity-70 flex flex-col items-center justify-center z-50 hidden">
+            <div class="bg-white p-6 rounded-lg shadow-lg max-w-md w-full text-center">
+                <i class="fas fa-cogs text-4xl text-blue-600 mb-4 animate-spin"></i>
+                <h3 class="text-xl font-bold mb-4">Generating Website</h3>
+                <div class="w-full bg-gray-200 rounded-full h-4 mb-4">
+                    <div id="generationProgressBar" class="bg-blue-600 h-4 rounded-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+                <p id="generationProgressText" class="text-gray-700">Preparing to generate pages...</p>
+                <p id="currentPageGenerating" class="text-sm text-gray-500 mt-2"></p>
+            </div>
+        </div>
     </div>
 
     <!-- Two-Column Layout -->
@@ -95,7 +156,7 @@ $current_page = isset($_GET['page']) ? $_GET['page'] : (isset($_SESSION['page_fi
                 </button>
                 <button id="generatePageBtn"
                     class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition duration-300 flex items-center justify-center flex-1"
-                    onclick="generatePage('<?php echo $current_page; ?>')">
+                    onclick="generateAndPreview('<?php echo $current_page; ?>')">
                     <div id="generateLoader" class="hidden ml-2">
                         <i class="fas fa-spinner fa-spin"></i>
                     </div>
@@ -280,3 +341,110 @@ $current_page = isset($_GET['page']) ? $_GET['page'] : (isset($_SESSION['page_fi
 <!-- Include the external JavaScript file -->
 <script src="../../assets/js/pages/page_editor.js"></script>
 <?php include '../../includes/footer.php'; ?>
+
+<script>
+function generateAndPreview(pageName) {
+    const generateBtn = document.getElementById('generatePageBtn');
+    const loader = document.getElementById('generateLoader');
+    
+    generateBtn.disabled = true;
+    loader.classList.remove('hidden');
+    
+    // Store the current page in session storage for the preview page to use
+    sessionStorage.setItem('pageToGenerate', pageName);
+    
+    // Show full page loader
+    document.getElementById('fullPageLoader').classList.remove('hidden');
+    document.getElementById('generationProgressText').textContent = `Generating ${pageName} page...`;
+    document.getElementById('generationProgressBar').style.width = '50%';
+    
+    // Redirect immediately to preview page with a parameter indicating to generate
+    window.location.href = '../generate/preview_page.php?generate=' + encodeURIComponent(pageName);
+}
+
+// Generate All Pages functionality
+document.getElementById('generateAllPagesBtn').addEventListener('click', function() {
+    const generateAllBtn = document.getElementById('generateAllPagesBtn');
+    const loader = document.getElementById('generateAllLoader');
+    
+    generateAllBtn.disabled = true;
+    loader.classList.remove('hidden');
+    
+    // Get all page names from the tabs
+    const pageElements = document.querySelectorAll('[data-page]');
+    const pages = Array.from(pageElements).map(el => el.dataset.page);
+    
+    // Store pages to generate in session storage
+    sessionStorage.setItem('pagesToGenerate', JSON.stringify(pages));
+    
+    // Show full page loader
+    document.getElementById('fullPageLoader').classList.remove('hidden');
+    document.getElementById('generationProgressText').textContent = 'Preparing to generate all pages...';
+    document.getElementById('generationProgressBar').style.width = '10%';
+    
+    // Start the generation process
+    generateAllPages(pages);
+});
+
+// Function to generate all pages sequentially
+function generateAllPages(pages) {
+    if (!pages || pages.length === 0) {
+        // All pages generated, redirect to preview
+        window.location.href = '../generate/preview_page.php?generate_all=true';
+        return;
+    }
+    
+    const totalPages = pages.length;
+    const pagesLeft = [...pages]; // Create a copy to work with
+    const totalPagesCount = pagesLeft.length;
+    let completedPages = 0;
+    
+    function generateNextPage() {
+        if (pagesLeft.length === 0) {
+            // All pages generated, redirect to preview
+            window.location.href = '../generate/preview_page.php?generate_all=true';
+            return;
+        }
+        
+        const currentPage = pagesLeft.shift();
+        completedPages++;
+        
+        // Update progress UI
+        const progressPercentage = (completedPages / totalPagesCount) * 100;
+        document.getElementById('generationProgressBar').style.width = `${progressPercentage}%`;
+        document.getElementById('generationProgressText').textContent = 
+            `Generating page ${completedPages} of ${totalPagesCount}`;
+        document.getElementById('currentPageGenerating').textContent = 
+            `Current page: ${currentPage}`;
+        
+        // Make AJAX request to generate the page
+        fetch('../generate/generate_page.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ page: currentPage })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Continue with next page
+                setTimeout(generateNextPage, 500); // Small delay between requests
+            } else {
+                alert(`Error generating page ${currentPage}: ${data.message}`);
+                // Continue with next page despite error
+                setTimeout(generateNextPage, 500);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert(`Error generating page ${currentPage}: ${error.message}`);
+            // Continue with next page despite error
+            setTimeout(generateNextPage, 500);
+        });
+    }
+    
+    // Start the generation process
+    generateNextPage();
+}
+</script>

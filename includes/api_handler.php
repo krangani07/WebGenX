@@ -96,15 +96,41 @@ class ApiHandler
 
         $promptText .= "\n---\n\n";
 
-        // 3. Design & Aesthetics
+        // In the masterPrompt function, adding to the Design & Aesthetics section
         $promptText .= "3. Design & Aesthetics\n";
         $promptText .= "- Color Scheme: {$this->formData['colorScheme']}\n";
         $promptText .= "- Typography: {$this->formData['typography']}\n";
         $promptText .= "- Layout Style: Modern, clean design\n";
         $promptText .= "- Branding Elements: Simple logo and icons\n";
-        $promptText .= "- Responsive Design: Ensure compatibility across mobile, tablet, and desktop.\n\n";
+        $promptText .= "- Responsive Design: Ensure compatibility across mobile, tablet, and desktop.\n";
+        $promptText .= "- Use Lenis for smooth scrolling: Include 'https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.27/dist/lenis.min.js'\n";
+        $promptText .= "- For icons, use free SVG CDNs like Heroicons, Feather Icons, or Bootstrap Icons\n\n";
         $promptText .= "- For Navigation use the following way to write the links '../pages/pagename.php'.\n\n";
 
+        // In the singlePagePrompt function, adding to the General Guidelines section
+        $promptText .= "### General Guidelines:\n";
+        $promptText .= "- Follow best practices in **HTML5, CSS3, JS (ES6+), and PHP 8.2+**.\n";
+        $promptText .= "- Code must be **clean, modular**, and organized into **separate files**.\n";
+        $promptText .= "- Focus only on generating the page-specific sections and JavaScript for {$this->formData['pageName']}.\n";
+        $promptText .= "- All output must be **PHP code blocks**, with a comment at the top specifying the file path like this:\n";
+        $promptText .= "  `<?php // includes/{$this->formData['pageName']}_template/{sectionName}_{$this->formData['pageName']}.php ?>`\n";
+        $promptText .= "- Do not include inline styles or JS in PHP files unless essential.\n";
+        $promptText .= "- Use **Tailwind CSS** for styling and **DaisyUI** for UI components.\n";
+        $promptText .= "- Use **Heroicons 2** and **custom SVG icons** where needed.\n";
+        $promptText .= "- Implement smooth scrolling with Lenis: Include 'https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.27/dist/lenis.min.js'\n";
+        $promptText .= "- For icons, use free SVG CDNs like Heroicons (https://unpkg.com/heroicons), Feather Icons, or Bootstrap Icons\n";
+        $promptText .= "- **IMPORTANT**: Include CDN links for all libraries used (Tailwind CSS, DaisyUI, GSAP, etc.) in your code.\n";
+        $promptText .= "- Make sure your sections are compatible with the provided header and footer structure.\n\n";
+
+        // In the subPrompt function, adding to the Component Details section
+        $promptText .= "---\n\n";
+        $promptText .= "Component Details\n";
+        $promptText .= "- Component Type: {$this->formData['componentType']}\n";
+        $promptText .= "- Component Purpose: {$this->formData['componentPurpose']}\n";
+        $promptText .= "- Design Style: {$this->formData['designStyle']}\n";
+        $promptText .= "- Use Lenis for smooth scrolling: Include 'https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.27/dist/lenis.min.js'\n";
+        $promptText .= "- For icons, use free SVG CDNs like Heroicons, Feather Icons, or Bootstrap Icons\n\n";
+        $promptText .= "- For Navigation use the following way to write the links '../pages/pagename.php'.\n\n";
 
         $promptText .= "---\n\n";
 
@@ -412,9 +438,9 @@ class ApiHandler
         $promptText .= "**For navigation links, use this format: ../pages/[pagename].php**\n";
         $promptText .= "**For including any pages|js|css, use this format: '../'**\n";
 
-        error_log("\n-------------------------------------------------------------------------------------------------------------//\n");
-        error_log('single page prompt::==' . $promptText);
-        error_log("\n-------------------------------------------------------------------------------------------------------------//\n");
+        // error_log("\n-------------------------------------------------------------------------------------------------------------//\n");
+        // error_log('single page prompt::==' . $promptText);
+        // error_log("\n-------------------------------------------------------------------------------------------------------------//\n");
         return $promptText;
     }
 
@@ -422,14 +448,63 @@ class ApiHandler
     {
         $promptText = "You are an AI-powered component generator. Your task is to create a specific component or section for a website using HTML, PHP, JavaScript, and Tailwind.\n\n";
 
-        // Add sub-prompt specific instructions
+        // General Guidelines
+        $promptText .= "### General Guidelines:\n";
+        $promptText .= "- Follow best practices in **HTML5, CSS3, JS (ES6+), and PHP 8.2+**.\n";
+        $promptText .= "- Code must be **clean, modular**, and well-commented.\n";
+        $promptText .= "- All output must be **PHP code blocks**, with a comment at the top specifying the file path like this:\n";
+        $promptText .= "  `<?php // {$this->formData['outputPath']} ?>`\n";
+        $promptText .= "- Do not include inline styles or JS in PHP files unless essential.\n";
+        $promptText .= "- Use **Tailwind CSS** for styling and **DaisyUI** for UI components.\n";
+        $promptText .= "- Use **Heroicons 2** and **custom SVG icons** where needed.\n";
+        $promptText .= "- **IMPORTANT**: Include CDN links for all libraries used (Tailwind CSS, DaisyUI, GSAP, etc.) in your code.\n";
+        $promptText .= "- Make sure your component is compatible with the existing website structure.\n\n";
+
+        // Component Details
         $promptText .= "---\n\n";
-        $promptText .= "Component Details\n";
+        $promptText .= "### Component Details:\n";
         $promptText .= "- Component Type: {$this->formData['componentType']}\n";
         $promptText .= "- Component Purpose: {$this->formData['componentPurpose']}\n";
-        $promptText .= "- Design Style: {$this->formData['designStyle']}\n\n";
+        $promptText .= "- Design Style: {$this->formData['designStyle']}\n";
+        $promptText .= "- Website Name: " . (isset($this->formData['website_name']) ? $this->formData['website_name'] : 'custom_website') . "\n";
+        $promptText .= "- Output Path: " . (isset($this->formData['outputPath']) ? $this->formData['outputPath'] : 'includes/components/custom_component.php') . "\n\n";
 
-        // Add more component specific instructions as needed
+        // Interactivity & Animation
+        $promptText .= "### Interactivity & Animation Guidelines:\n";
+        $promptText .= "- Add appropriate interactivity to enhance user experience\n";
+        $promptText .= "- Include subtle animations where appropriate\n";
+        $promptText .= "- Use Lenis for smooth scrolling: Include 'https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.27/dist/lenis.min.js'\n";
+        $promptText .= "- For icons, use free SVG CDNs like Heroicons, Feather Icons, or Bootstrap Icons\n\n";
+
+        // Output Format
+        $promptText .= "### Output Format:\n";
+        $promptText .= "- Begin your response with the complete PHP code for the component\n";
+        $promptText .= "- Start with a comment indicating the file path: `<?php // {$this->formData['outputPath']} ?>`\n";
+        $promptText .= "- Include all necessary HTML, PHP, and inline JavaScript\n";
+        $promptText .= "- If additional JavaScript is needed, provide it in a separate code block with the appropriate file path comment\n";
+        $promptText .= "- For image placeholders, use 'https://placehold.co/600x400/000000/FFF.webp'\n";
+        $promptText .= "- For navigation links, use this format: '../pages/pagename.php'\n\n";
+
+        // Additional Information
+        if (isset($this->formData['description'])) {
+            $promptText .= "### Additional Description:\n";
+            $promptText .= "{$this->formData['description']}\n\n";
+        }
+
+        if (isset($this->formData['websiteType'])) {
+            $promptText .= "### Website Type:\n";
+            $promptText .= "{$this->formData['websiteType']}\n\n";
+        }
+
+        if (isset($this->formData['colorScheme'])) {
+            $promptText .= "### Color Scheme:\n";
+            $promptText .= "{$this->formData['colorScheme']}\n\n";
+        }
+
+        if (isset($this->formData['typography'])) {
+            $promptText .= "### Typography:\n";
+            $promptText .= "{$this->formData['typography']}\n\n";
+        }
 
         error_log("\n-------------------------------------------------------------------------------------------------------------//\n");
         error_log('sub prompt::==' . $promptText);
@@ -730,8 +805,36 @@ class ApiHandler
      */
     private function processSubPromptResponse($responseText, $httpCode)
     {
-        // Process sub-prompt response
-        // You can create a specific handler for sub-prompt responses
+        // Check if we need to save the code
+        if (isset($this->formData['saveCode']) && $this->formData['saveCode'] === true) {
+            // Use the structure generator to create files and folders if needed
+        require_once __DIR__ . '/structure_generator.php';
+        $path = USER_WEBSITES;
+        $generator = new StructureGenerator( $path );
+        
+        // Include the codesaver.php file
+        require_once __DIR__ . '/codesaver.php';
+        
+        // Extract JSON data to get website name
+        $jsonData = json_decode($generator->cleanJson($responseText), true);
+        // Fix: Use 'website_name' instead of 'websiteName'
+        $websiteName = $jsonData ? array_key_first($jsonData) : ($this->formData['website_name'] ?? 'custom_website');
+        $websiteName .= '/includes';
+        // Call the extractAndSaveContent function from codesaver.php to save code blocks
+        // Pass an additional parameter to indicate we want to overwrite existing files
+        $saveResult = extractAndSaveContent($responseText, $websiteName, true); // Added true parameter for overwrite
+        // This logs the success or failure of code extraction
+        error_log("Code extraction result: " . ($saveResult['success'] ? "Success" : "Failed") . " - " . $saveResult['message']);
+        
+        return [
+            'code' => $httpCode,
+            'data' => $responseText,
+            'type' => 'section',
+            'save_result' => $saveResult
+        ];
+        }
+        
+        // Default return if not saving code
         return [
             'code' => $httpCode,
             'data' => $responseText,

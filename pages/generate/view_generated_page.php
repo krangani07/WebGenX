@@ -31,6 +31,9 @@ $response = $generatedPage['response'];
             <button id="savePageBtn" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded inline-flex items-center ml-2">
                 <i class="fas fa-save mr-2"></i> Save Page
             </button>
+            <a href="preview_page.php" class="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded inline-flex items-center ml-2">
+                <i class="fas fa-eye mr-2"></i> Preview Page
+            </a>
         </div>
         
         <div class="border border-gray-300 rounded-lg p-4 bg-gray-50">
