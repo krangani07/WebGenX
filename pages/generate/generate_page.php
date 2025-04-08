@@ -8,6 +8,12 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
+// Set initial generation status
+$_SESSION['generation_status'] = [
+    'status' => 'in_progress',
+    'message' => 'Generating page...'
+];
+
 // Get the page data from the request
 $pageData = json_decode(file_get_contents('php://input'), true);
 
@@ -53,14 +59,8 @@ $formData = [
     'headerFooterReference' => $headerFooterReference
 ];
 
-// Log the data being sent to the API handler
-// error_log('Data sent to API handler: ' . print_r($formData, true));
-
 // Call the API handler with the singlePage prompt type
 $response = handleApiRequest($formData, 'singlePage');
-
-// Log the response from the API handler
-// error_log('Response from API handler: ' . print_r($response, true));
 
 // Store the response in the session
 $_SESSION['generated_page'] = [
@@ -69,10 +69,21 @@ $_SESSION['generated_page'] = [
     'formData' => $formData // Store the form data for debugging
 ];
 
-// Return success response with redirect URL (updated path)
+// When generation is complete, update the status
+$_SESSION['generation_status'] = [
+    'status' => 'completed',
+    'message' => 'Page generation complete'
+];
+
+// After successfully generating the page, mark it as generated in the session
+if (isset($_SESSION['page_files'][$pageName])) {
+    $_SESSION['page_files'][$pageName]['generated'] = true;
+}
+
+// Return success response with redirect URL
 echo json_encode([
     'success' => true, 
     'message' => 'Page generated successfully',
-    'redirect' => '/qp/WebGenX/pages/generate/view_generated_page.php',
-    'debug_data' => $formData // Include the form data in the response for debugging
+    'redirect' => '/qp/WebGenX/pages/generate/preview_page.php?page=' . urlencode($pageName),
+    'pageName' => $pageName
 ]);
